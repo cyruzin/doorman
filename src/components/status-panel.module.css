@@ -1,0 +1,22 @@
+.wrapper {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+}
+
+.panel {
+  padding: var(--space-6);
+  max-width: 420px;
+  text-align: center;
+}
+
+.title {
+  margin-bottom: var(--space-2);
+}
+
+.message {
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-5);
+}

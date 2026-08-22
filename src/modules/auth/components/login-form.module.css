@@ -1,0 +1,35 @@
+.panel {
+  padding: var(--space-8) var(--space-6);
+  width: 100%;
+  max-width: 380px;
+}
+
+.badge {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin-bottom: var(--space-4);
+}
+
+.title {
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.subtitle {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin-top: var(--space-1);
+}
+
+.submit {
+  width: 100%;
+  padding: var(--space-3);
+  margin-top: var(--space-2);
+}

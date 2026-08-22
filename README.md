@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# St. Tropez
 
-## Getting Started
+Sistema de gestão de portaria/condomínio: cadastro de moradores (proprietários
+e inquilinos, com vínculo entre eles), usuários do sistema (admin/porteiro),
+grid dos 110 apartamentos do prédio (19 andares) e backup do banco.
 
-First, run the development server:
+Roda localmente numa única máquina — sem Docker, sem Postgres (SQLite).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Rodando o projeto
+
+Requer um `.env` na raiz com:
+
+```
+DATABASE_URL="file:./dev.db"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```bash
+npm install
+npx prisma migrate dev   # aplica as migrações e gera o client
+npx tsx scripts/seed-admin.ts [usuario] [senha]  # cria o super admin (padrão: admin/admin123)
+npm run dev
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Abra [http://localhost:3000](http://localhost:3000).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Testes e qualidade
 
-## Learn More
+```bash
+npm run test           # vitest
+npm run test:coverage  # vitest com cobertura
+npm run lint           # eslint
+npx tsc --noEmit       # checagem de tipos
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Documentação
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `AGENTS.md` — visão geral do projeto e stack para agentes de IA
+- `.agents/ARCHITECTURE.md` — arquitetura, estrutura de pastas e padrões do código
+- `.agents/GIT_STANDARDS.md` — convenções de commit
+- `specs/` — especificação funcional original

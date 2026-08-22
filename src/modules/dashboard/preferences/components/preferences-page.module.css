@@ -1,0 +1,17 @@
+.title {
+  font-size: var(--text-2xl);
+}
+
+.section {
+  padding: var(--space-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-1);
+}

@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Role {
+  ADMIN
+  DOORMAN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         Role     @default(DOORMAN)
+  // The seeded first admin — cannot be deleted or demoted, to avoid locking everyone out.
+  isSuperAdmin Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+model Tenant {
+  id        String    @id @default(cuid())
+  name      String
+  cpf       String?
+  email     String?
+  unit      String
+  // Soft-deleted instead of removed, so old tenants stay searchable.
+  active    Boolean   @default(true)
+  phones    Phone[]
+  vehicles  Vehicle[]
+  // The unit's owner, when this tenant is renting from someone (locador).
+  ownerId   String?
+  owner     Owner?    @relation(fields: [ownerId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([name])
+  @@index([unit])
+  @@index([ownerId])
+}
+
+model Owner {
+  id        String    @id @default(cuid())
+  name      String
+  cpf       String?
+  email     String?
+  unit      String
+  active    Boolean   @default(true)
+  phones    Phone[]
+  vehicles  Vehicle[]
+  // Tenants currently renting from this owner (locatários).
+  tenants   Tenant[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([name])
+  @@index([unit])
+}
+
+// A resident can have more than one phone — one row per number, linked to
+// whichever kind of resident it belongs to (exactly one of tenantId/ownerId is set).
+model Phone {
+  id         String  @id @default(cuid())
+  number     String
+  isWhatsapp Boolean @default(false)
+  tenantId   String?
+  tenant     Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ownerId    String?
+  owner      Owner?  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([ownerId])
+}
+
+// A resident can have more than one vehicle — same shape as Phone.
+model Vehicle {
+  id       String  @id @default(cuid())
+  plate    String?
+  model    String?
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ownerId  String?
+  owner    Owner?  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([ownerId])
+}
