@@ -9,6 +9,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn: "/login",
   },
+  // Self-hosted on whatever machine/LAN address the porteiro's PC happens to
+  // have — there's no fixed public domain to pin AUTH_URL to, so trust the
+  // request's Host header instead (Auth.js only auto-trusts localhost in dev).
+  trustHost: true,
   providers: [
     Credentials({
       credentials: {
