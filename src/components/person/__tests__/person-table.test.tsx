@@ -6,7 +6,7 @@ import type { Person } from "@/lib/person-client";
 const person: Person = {
   id: "1",
   name: "Maria Silva",
-  cpf: "",
+  cpf: "12345678900",
   email: "",
   unit: "101",
   active: true,
@@ -17,6 +17,51 @@ const person: Person = {
 };
 
 describe("PersonTable", () => {
+  it("displays CPF and phone numbers masked, keeping the stored value untouched", () => {
+    render(<PersonTable items={[person]} canUpdate={false} canDelete={false} onEdit={vi.fn()} onToggleActive={vi.fn()} />);
+
+    expect(screen.getByText("123.456.789-00")).toBeInTheDocument();
+    expect(screen.getByText("(11) 99999-0000")).toBeInTheDocument();
+  });
+
+  it("shows a dash when the person has no CPF on file", () => {
+    render(
+      <PersonTable
+        items={[{ ...person, cpf: null }]}
+        canUpdate={false}
+        canDelete={false}
+        onEdit={vi.fn()}
+        onToggleActive={vi.fn()}
+      />,
+    );
+
+    // Column order is Nome, Apartamento, CPF, Status, Telefones, Veículos...
+    const cpfCell = screen.getAllByRole("cell")[2];
+    expect(cpfCell).toHaveTextContent("—");
+  });
+
+  it("shows both the plate and the model for each vehicle", () => {
+    render(
+      <PersonTable
+        items={[
+          {
+            ...person,
+            vehicles: [
+              { id: "v1", plate: "ABC1234", model: "Onix" },
+              { id: "v2", plate: null, model: "Civic" },
+            ],
+          },
+        ]}
+        canUpdate={false}
+        canDelete={false}
+        onEdit={vi.fn()}
+        onToggleActive={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Onix — ABC1234, Civic")).toBeInTheDocument();
+  });
+
   it("hides edit/status actions when the user lacks permission", () => {
     render(<PersonTable items={[person]} canUpdate={false} canDelete={false} onEdit={vi.fn()} onToggleActive={vi.fn()} />);
 

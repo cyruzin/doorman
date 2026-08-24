@@ -16,8 +16,14 @@ describe("can", () => {
     expect(can("DOORMAN", "backups", "read")).toBe(false);
   });
 
+  it("gives DOORMAN full access to mezanino key checkouts", () => {
+    for (const action of ["create", "read", "update", "delete"] as const) {
+      expect(can("DOORMAN", "mezanino", action)).toBe(true);
+    }
+  });
+
   it("gives ADMIN full access to every resource", () => {
-    for (const resource of ["tenants", "owners", "users"] as const) {
+    for (const resource of ["tenants", "owners", "users", "mezanino"] as const) {
       for (const action of ["create", "read", "update", "delete"] as const) {
         expect(can("ADMIN", resource, action)).toBe(true);
       }

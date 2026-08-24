@@ -1,9 +1,10 @@
 "use client";
 
-import { useFieldArray, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { tenantSchema } from "@/lib/validations/person";
 import type { Person, PersonWriteInput } from "@/lib/person-client";
+import { maskCpf, maskPhone, unmask } from "@/lib/helpers/masks";
 import styles from "./person-form.module.css";
 
 export interface OwnerOption {
@@ -48,8 +49,17 @@ export function PersonForm({ defaultValues, onSubmit, onCancel, submitLabel = "S
   const phoneFields = useFieldArray({ control, name: "phones" });
   const vehicleFields = useFieldArray({ control, name: "vehicles" });
 
+  // The mask is a display concern only — what reaches the API (and the DB)
+  // stays plain digits, same as before this feature existed.
+  const submit = (data: PersonWriteInput) =>
+    onSubmit({
+      ...data,
+      cpf: data.cpf ? unmask(data.cpf) : data.cpf,
+      phones: data.phones.map((phone) => ({ ...phone, number: unmask(phone.number) })),
+    });
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
+    <form onSubmit={handleSubmit(submit)} className="form-stack">
       <div className="form-grid">
         <div className="form-field">
           <label htmlFor="name">Nome</label>
@@ -65,7 +75,20 @@ export function PersonForm({ defaultValues, onSubmit, onCancel, submitLabel = "S
 
         <div className="form-field">
           <label htmlFor="cpf">CPF</label>
-          <input id="cpf" className="input" {...register("cpf")} />
+          <Controller
+            name="cpf"
+            control={control}
+            render={({ field }) => (
+              <input
+                id="cpf"
+                className="input"
+                inputMode="numeric"
+                value={maskCpf(field.value ?? "")}
+                onChange={(e) => field.onChange(maskCpf(e.target.value))}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
         </div>
 
         <div className="form-field">
@@ -107,7 +130,20 @@ export function PersonForm({ defaultValues, onSubmit, onCancel, submitLabel = "S
           <div key={field.id} className={styles.repeatingRow}>
             <div className="form-field">
               <label htmlFor={`phones.${index}.number`}>Telefone</label>
-              <input id={`phones.${index}.number`} className="input" {...register(`phones.${index}.number` as const)} />
+              <Controller
+                name={`phones.${index}.number` as const}
+                control={control}
+                render={({ field }) => (
+                  <input
+                    id={`phones.${index}.number`}
+                    className="input"
+                    inputMode="numeric"
+                    value={maskPhone(field.value ?? "")}
+                    onChange={(e) => field.onChange(maskPhone(e.target.value))}
+                    onBlur={field.onBlur}
+                  />
+                )}
+              />
               {errors.phones?.[index]?.number && (
                 <span className="field-error">{errors.phones[index]?.number?.message}</span>
               )}

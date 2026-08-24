@@ -1,6 +1,7 @@
 "use client";
 
 import type { Person } from "@/lib/person-client";
+import { maskCpf, maskPhone } from "@/lib/helpers/masks";
 import styles from "./person-table.module.css";
 
 interface PersonTableProps {
@@ -25,6 +26,7 @@ export function PersonTable({ items, canUpdate, canDelete, onEdit, onToggleActiv
           <tr>
             <th>Nome</th>
             <th>Apartamento</th>
+            <th>CPF</th>
             <th>Status</th>
             <th>Telefones</th>
             <th>Veículos</th>
@@ -38,6 +40,7 @@ export function PersonTable({ items, canUpdate, canDelete, onEdit, onToggleActiv
             <tr key={person.id}>
               <td>{person.name}</td>
               <td>{person.unit}</td>
+              <td>{person.cpf ? maskCpf(person.cpf) : "—"}</td>
               <td>
                 <span className={`badge ${person.active ? "badge-success" : "badge-danger"}`}>
                   {person.active ? "Ativo" : "Inativo"}
@@ -48,7 +51,7 @@ export function PersonTable({ items, canUpdate, canDelete, onEdit, onToggleActiv
                   ? "—"
                   : person.phones.map((phone, index) => (
                       <span key={phone.id} className={styles.phoneItem}>
-                        {phone.number}
+                        {maskPhone(phone.number)}
                         {phone.isWhatsapp && (
                           <span className={`badge badge-success ${styles.whatsappBadge}`}>WhatsApp</span>
                         )}
@@ -56,7 +59,11 @@ export function PersonTable({ items, canUpdate, canDelete, onEdit, onToggleActiv
                       </span>
                     ))}
               </td>
-              <td>{person.vehicles.length === 0 ? "—" : person.vehicles.map((v) => v.plate || v.model).join(", ")}</td>
+              <td>
+                {person.vehicles.length === 0
+                  ? "—"
+                  : person.vehicles.map((v) => [v.model, v.plate].filter(Boolean).join(" — ")).join(", ")}
+              </td>
               {relationColumn === "owner" && <td>{person.owner?.name ?? "—"}</td>}
               {relationColumn === "tenants" && (
                 <td>{person.tenants && person.tenants.length > 0 ? person.tenants.map((t) => t.name).join(", ") : "—"}</td>

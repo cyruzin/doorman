@@ -6,12 +6,21 @@ import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { can, type Resource } from "@/lib/permissions";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
-import { ApartmentsIcon, BackupsIcon, HomeIcon, PreferencesIcon, ResidentsIcon, UsersIcon } from "./nav-icons";
+import {
+  ApartmentsIcon,
+  BackupsIcon,
+  HomeIcon,
+  MezaninoIcon,
+  PreferencesIcon,
+  ResidentsIcon,
+  UsersIcon,
+} from "./nav-icons";
 import { NavClock } from "./nav-clock";
 
 const links = [
   { href: "/", label: "Início", Icon: HomeIcon },
   { href: "/apartments", label: "Apartamentos", resources: ["tenants", "owners"] as Resource[], Icon: ApartmentsIcon },
+  { href: "/mezanino", label: "Mezanino", resources: ["mezanino"] as Resource[], Icon: MezaninoIcon },
   { href: "/residents", label: "Moradores", resources: ["tenants", "owners"] as Resource[], Icon: ResidentsIcon },
   { href: "/users", label: "Usuários", resources: ["users"] as Resource[], Icon: UsersIcon },
   { href: "/backups", label: "Backups", resources: ["backups"] as Resource[], Icon: BackupsIcon },

@@ -43,6 +43,16 @@ export function ApartmentsIcon({ className }: IconProps) {
   );
 }
 
+export function MezaninoIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="1.2" />
+      <path d="M3.5 13h17" />
+      <path d="M7 13V8.5M12 13V8.5M17 13V8.5" />
+    </svg>
+  );
+}
+
 export function UsersIcon({ className }: IconProps) {
   return (
     <svg {...base} className={className}>

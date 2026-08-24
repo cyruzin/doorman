@@ -12,6 +12,12 @@ enum Role {
   DOORMAN
 }
 
+enum MezaninoRoom {
+  GAME_ROOM
+  GYM
+  KIDS_SPACE
+}
+
 model User {
   id           String   @id @default(cuid())
   username     String   @unique
@@ -74,6 +80,21 @@ model Phone {
 
   @@index([tenantId])
   @@index([ownerId])
+}
+
+// One row per key checkout of a mezanino room — tracks who's using it and
+// when they returned the key. residentName is a snapshot at entry time, so
+// history stays readable even if the resident record later changes.
+model MezaninoEntry {
+  id           String       @id @default(cuid())
+  room         MezaninoRoom
+  unit         String
+  residentName String
+  entryAt      DateTime     @default(now())
+  exitAt       DateTime?
+
+  @@index([room, entryAt])
+  @@index([room, exitAt])
 }
 
 // A resident can have more than one vehicle — same shape as Phone.
