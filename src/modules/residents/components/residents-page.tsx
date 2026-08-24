@@ -11,10 +11,6 @@ import styles from "./residents-page.module.css";
 
 type Kind = "tenant" | "owner";
 
-// Owners rarely number in the hundreds for a single building — a plain select
-// covers it. Add a search-as-you-type picker if that ever changes.
-const OWNER_PICKER_PAGE_SIZE = 100;
-
 export function ResidentsPage() {
   const { data: session } = useSession();
   const role = session?.user?.role;
@@ -37,11 +33,10 @@ export function ResidentsPage() {
     setIsCreating(false);
   };
 
-  const { data: ownerPickerData } = useOwners({ pageSize: OWNER_PICKER_PAGE_SIZE, status: "active" });
-  const ownerOptions = (ownerPickerData?.items ?? []).map((owner) => ({
-    value: owner.id,
-    label: `${owner.name} (apto ${owner.unit})`,
-  }));
+  // A cheap existence check (not a full list) — the tenant form's own owner
+  // picker handles the actual search-by-name lookup.
+  const { data: ownerExistence } = useOwners({ pageSize: 1, status: "active" });
+  const hasAnyOwner = (ownerExistence?.total ?? 0) > 0;
 
   if (!canSeeTenants && !canSeeOwners) {
     return (
@@ -54,6 +49,9 @@ export function ResidentsPage() {
   const resource = kind === "tenant" ? "tenants" : "owners";
   const entityLabel = kind === "tenant" ? "Inquilino" : "Proprietário";
   const canCreate = !!role && can(role, resource, "create");
+  // A tenant always rents from an owner — there's nobody to hold responsible
+  // for the unit otherwise, so block tenant creation until one exists.
+  const blockTenantCreate = kind === "tenant" && !hasAnyOwner;
 
   return (
     <div className="page">
@@ -88,6 +86,7 @@ export function ResidentsPage() {
               className="btn btn-primary"
               onClick={() => setIsCreating(true)}
               aria-label={`Novo ${entityLabel.toLowerCase()}`}
+              disabled={blockTenantCreate}
             >
               <span className="btn-label-full">Novo {entityLabel.toLowerCase()}</span>
               <span className="btn-label-icon" aria-hidden="true">
@@ -97,6 +96,12 @@ export function ResidentsPage() {
           )}
         </div>
       </div>
+
+      {blockTenantCreate && (
+        <span className="badge badge-danger">
+          Cadastre um proprietário antes de cadastrar um inquilino.
+        </span>
+      )}
 
       {kind === "tenant" ? (
         <PersonModulePage
@@ -108,7 +113,7 @@ export function ResidentsPage() {
           useUpdate={useUpdateTenant}
           isCreating={isCreating}
           onCreatingChange={setIsCreating}
-          ownerOptions={ownerOptions}
+          showOwnerField
           relationColumn="owner"
           initialEditId={kind === "tenant" ? urlEditId : null}
           useDetail={useTenantDetail}

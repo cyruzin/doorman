@@ -11,8 +11,9 @@ import {
   BackupsIcon,
   HomeIcon,
   MezaninoIcon,
-  PreferencesIcon,
+  ReportsIcon,
   ResidentsIcon,
+  SchedulingIcon,
   UsersIcon,
 } from "./nav-icons";
 import { NavClock } from "./nav-clock";
@@ -21,10 +22,11 @@ const links = [
   { href: "/", label: "Início", Icon: HomeIcon },
   { href: "/apartments", label: "Apartamentos", resources: ["tenants", "owners"] as Resource[], Icon: ApartmentsIcon },
   { href: "/mezanino", label: "Mezanino", resources: ["mezanino"] as Resource[], Icon: MezaninoIcon },
+  { href: "/scheduling", label: "Agendamentos", resources: ["scheduling"] as Resource[], Icon: SchedulingIcon },
   { href: "/residents", label: "Moradores", resources: ["tenants", "owners"] as Resource[], Icon: ResidentsIcon },
   { href: "/users", label: "Usuários", resources: ["users"] as Resource[], Icon: UsersIcon },
+  { href: "/reports", label: "Relatórios", resources: ["reports"] as Resource[], Icon: ReportsIcon },
   { href: "/backups", label: "Backups", resources: ["backups"] as Resource[], Icon: BackupsIcon },
-  { href: "/preferences", label: "Preferências", Icon: PreferencesIcon },
 ];
 
 export function MainNav() {
@@ -34,6 +36,9 @@ export function MainNav() {
 
   const role = session?.user?.role;
   const username = session?.user?.name ?? "";
+  // The username often doubles as the porteiro's real name ("Raimundo Gomes") —
+  // the header chip only has room for a first name.
+  const displayName = username.trim().split(/\s+/)[0] ?? username;
 
   const closeMenu = () => setIsOpen(false);
 
@@ -79,7 +84,7 @@ export function MainNav() {
               <span className="main-nav-user-avatar" aria-hidden="true">
                 {username.charAt(0).toUpperCase()}
               </span>
-              <span className="main-nav-user">{username}</span>
+              <span className="main-nav-user">{displayName}</span>
             </div>
           )}
 

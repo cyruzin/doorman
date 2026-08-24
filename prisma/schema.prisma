@@ -18,6 +18,12 @@ enum MezaninoRoom {
   KIDS_SPACE
 }
 
+enum SchedulingRoom {
+  PARTY_HALL
+  CINEMA
+  GRILL
+}
+
 model User {
   id           String   @id @default(cuid())
   username     String   @unique
@@ -95,6 +101,29 @@ model MezaninoEntry {
 
   @@index([room, entryAt])
   @@index([room, exitAt])
+}
+
+// One row per reserved event in a shared space (salão de festas, cinema,
+// grill) — tracks who booked it, when, and whether it already happened.
+// requesterName is a snapshot at booking time, same rationale as
+// MezaninoEntry.residentName. "Excluir" in the UI is a soft cancel
+// (cancelledAt), not a hard delete — the paid rooms' control report needs
+// cancelled bookings to still show up in history.
+model SchedulingEntry {
+  id                   String         @id @default(cuid())
+  room                 SchedulingRoom
+  unit                 String
+  requesterName        String
+  eventAt              DateTime
+  allowMultipleSameDay Boolean        @default(false)
+  notes                String?
+  finishedAt           DateTime?
+  finishedByUsername   String?
+  cancelledAt          DateTime?
+  cancelledByUsername  String?
+  createdAt            DateTime       @default(now())
+
+  @@index([room, eventAt])
 }
 
 // A resident can have more than one vehicle — same shape as Phone.

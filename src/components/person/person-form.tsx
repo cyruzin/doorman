@@ -1,27 +1,25 @@
 "use client";
 
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { tenantSchema } from "@/lib/validations/person";
 import type { Person, PersonWriteInput } from "@/lib/person-client";
 import { maskCpf, maskPhone, unmask } from "@/lib/helpers/masks";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useUnitOccupancy } from "@/modules/apartments/hooks/use-unit-occupancy";
+import { OwnerPicker } from "./owner-picker";
 import styles from "./person-form.module.css";
-
-export interface OwnerOption {
-  value: string;
-  label: string;
-}
 
 interface PersonFormProps {
   defaultValues?: Person;
   onSubmit: (data: PersonWriteInput) => Promise<void> | void;
   onCancel: () => void;
   submitLabel?: string;
-  /** When provided, renders a "Proprietário" select — used only for the Tenant form. */
-  ownerOptions?: OwnerOption[];
+  /** Renders the "Proprietário" picker and enforces the unit-has-an-owner rule — used only for the Tenant form. */
+  showOwnerField?: boolean;
 }
 
-export function PersonForm({ defaultValues, onSubmit, onCancel, submitLabel = "Salvar", ownerOptions }: PersonFormProps) {
+export function PersonForm({ defaultValues, onSubmit, onCancel, submitLabel = "Salvar", showOwnerField }: PersonFormProps) {
   const {
     register,
     control,
@@ -48,6 +46,13 @@ export function PersonForm({ defaultValues, onSubmit, onCancel, submitLabel = "S
 
   const phoneFields = useFieldArray({ control, name: "phones" });
   const vehicleFields = useFieldArray({ control, name: "vehicles" });
+
+  // A tenant always rents from an owner — check live as the unit is typed so
+  // this can't be submitted for an apartment with nobody registered as its owner.
+  const unitValue = useWatch({ control, name: "unit" });
+  const debouncedUnit = useDebouncedValue(unitValue, 400);
+  const { data: unitOccupancy } = useUnitOccupancy(showOwnerField && debouncedUnit ? debouncedUnit : null);
+  const unitHasNoOwner = !!showOwnerField && !!debouncedUnit && !!unitOccupancy && unitOccupancy.owners.length === 0;
 
   // The mask is a display concern only — what reaches the API (and the DB)
   // stays plain digits, same as before this feature existed.
@@ -97,17 +102,28 @@ export function PersonForm({ defaultValues, onSubmit, onCancel, submitLabel = "S
           {errors.email && <span className="field-error">{errors.email.message}</span>}
         </div>
 
-        {ownerOptions && (
+        {showOwnerField && (
           <div className="form-field">
             <label htmlFor="ownerId">Proprietário (locador)</label>
-            <select id="ownerId" className="input" {...register("ownerId")}>
-              <option value="">Nenhum</option>
-              {ownerOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <Controller
+              name="ownerId"
+              control={control}
+              render={({ field }) => (
+                <OwnerPicker
+                  id="ownerId"
+                  value={field.value ?? ""}
+                  defaultLabel={
+                    defaultValues?.owner ? `${defaultValues.owner.name} (apto ${defaultValues.owner.unit})` : undefined
+                  }
+                  onChange={field.onChange}
+                />
+              )}
+            />
+            {unitHasNoOwner && (
+              <span className="field-error">
+                Não há proprietário cadastrado para o apartamento {unitValue}. Cadastre o proprietário antes de continuar.
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -211,7 +227,7 @@ export function PersonForm({ defaultValues, onSubmit, onCancel, submitLabel = "S
         <button type="button" className="btn btn-secondary" onClick={onCancel}>
           Cancelar
         </button>
-        <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+        <button type="submit" className="btn btn-primary" disabled={isSubmitting || unitHasNoOwner}>
           {isSubmitting ? "Salvando..." : submitLabel}
         </button>
       </div>

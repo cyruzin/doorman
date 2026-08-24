@@ -193,7 +193,7 @@ export function MezaninoRoomPanel({ room }: MezaninoRoomPanelProps) {
             <table>
               <thead>
                 <tr>
-                  <th>Apto</th>
+                  <th>Apartamento</th>
                   <th>Morador</th>
                   <th>Data</th>
                   <th>Entrada</th>

@@ -9,7 +9,7 @@ import { useConfirm } from "@/components/confirm/confirm-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Pagination } from "@/components/pagination/pagination";
 import type { Person, PersonListParams, PersonListResult, PersonStatusFilter, PersonWriteInput } from "@/lib/person-client";
-import { PersonForm, type OwnerOption } from "./person-form";
+import { PersonForm } from "./person-form";
 import { PersonTable } from "./person-table";
 import styles from "./person-module-page.module.css";
 
@@ -24,8 +24,8 @@ interface PersonModulePageProps {
   /** The "novo X" form's open state — owned by the parent so its create button can live next to the tab switcher. */
   isCreating: boolean;
   onCreatingChange: (value: boolean) => void;
-  /** Renders the "Proprietário" select in the form — pass only for the Tenant tab. */
-  ownerOptions?: OwnerOption[];
+  /** Renders the "Proprietário" picker in the form — pass only for the Tenant tab. */
+  showOwnerField?: boolean;
   /** Shows the linked owner/tenants column in the table. */
   relationColumn?: "owner" | "tenants";
   /** Opens the edit form for this id on mount (e.g. deep-linked from the Apartments detail panel). */
@@ -41,7 +41,7 @@ export function PersonModulePage({
   useUpdate,
   isCreating,
   onCreatingChange,
-  ownerOptions,
+  showOwnerField,
   relationColumn,
   initialEditId,
   useDetail,
@@ -134,7 +134,7 @@ export function PersonModulePage({
     <div className="page-section">
       {isCreating && (
         <div className={`card ${styles.formCard}`}>
-          <PersonForm onSubmit={handleCreate} onCancel={() => onCreatingChange(false)} submitLabel="Criar" ownerOptions={ownerOptions} />
+          <PersonForm onSubmit={handleCreate} onCancel={() => onCreatingChange(false)} submitLabel="Criar" showOwnerField={showOwnerField} />
         </div>
       )}
 
@@ -145,7 +145,7 @@ export function PersonModulePage({
             onSubmit={handleUpdate}
             onCancel={closeEditing}
             submitLabel="Salvar"
-            ownerOptions={ownerOptions}
+            showOwnerField={showOwnerField}
           />
         </div>
       )}

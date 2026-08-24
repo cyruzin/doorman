@@ -22,8 +22,21 @@ describe("can", () => {
     }
   });
 
+  it("gives DOORMAN full access to event scheduling", () => {
+    for (const action of ["create", "read", "update", "delete"] as const) {
+      expect(can("DOORMAN", "scheduling", action)).toBe(true);
+    }
+  });
+
+  it("lets DOORMAN read reports but not create/update/delete them", () => {
+    expect(can("DOORMAN", "reports", "read")).toBe(true);
+    expect(can("DOORMAN", "reports", "create")).toBe(false);
+    expect(can("DOORMAN", "reports", "update")).toBe(false);
+    expect(can("DOORMAN", "reports", "delete")).toBe(false);
+  });
+
   it("gives ADMIN full access to every resource", () => {
-    for (const resource of ["tenants", "owners", "users", "mezanino"] as const) {
+    for (const resource of ["tenants", "owners", "users", "mezanino", "scheduling"] as const) {
       for (const action of ["create", "read", "update", "delete"] as const) {
         expect(can("ADMIN", resource, action)).toBe(true);
       }
@@ -31,5 +44,6 @@ describe("can", () => {
     expect(can("ADMIN", "backups", "create")).toBe(true);
     expect(can("ADMIN", "backups", "read")).toBe(true);
     expect(can("ADMIN", "backups", "delete")).toBe(true);
+    expect(can("ADMIN", "reports", "read")).toBe(true);
   });
 });

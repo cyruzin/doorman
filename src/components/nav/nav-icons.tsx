@@ -53,6 +53,26 @@ export function MezaninoIcon({ className }: IconProps) {
   );
 }
 
+export function SchedulingIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <rect x="3.5" y="4.5" width="17" height="16" rx="1.2" />
+      <path d="M3.5 9h17M8 3v3M16 3v3" />
+      <path d="M8 13h2M8 16.5h2M14 13h2M14 16.5h2" />
+    </svg>
+  );
+}
+
+export function ReportsIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M7 3.5h7l4 4V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" />
+      <path d="M14 3.5V8h4" />
+      <path d="M9 13h6M9 16.5h6" />
+    </svg>
+  );
+}
+
 export function UsersIcon({ className }: IconProps) {
   return (
     <svg {...base} className={className}>
@@ -68,15 +88,6 @@ export function BackupsIcon({ className }: IconProps) {
       <ellipse cx="12" cy="5.2" rx="7" ry="2.4" />
       <path d="M5 5.2v5.8c0 1.3 3.1 2.4 7 2.4s7-1.1 7-2.4V5.2" />
       <path d="M5 11v5.8c0 1.3 3.1 2.4 7 2.4s7-1.1 7-2.4V11" />
-    </svg>
-  );
-}
-
-export function PreferencesIcon({ className }: IconProps) {
-  return (
-    <svg {...base} className={className}>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2.5v3M12 18.5v3M4.4 4.4l2.1 2.1M17.5 17.5l2.1 2.1M2.5 12h3M18.5 12h3M4.4 19.6l2.1-2.1M17.5 6.5l2.1-2.1" />
     </svg>
   );
 }

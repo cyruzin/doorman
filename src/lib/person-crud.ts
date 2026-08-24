@@ -63,6 +63,14 @@ function prepareWrite(model: Model, data: Record<string, unknown>, isUpdate: boo
   return toNestedWrites(normalizeOwnerId(model, data), isUpdate);
 }
 
+// A tenant always rents from an owner — reject the write if nobody is
+// registered as the owner of that unit, regardless of which owner (if any)
+// was picked as the locador.
+async function unitHasNoOwner(unit: string): Promise<boolean> {
+  const owner = await prisma.owner.findFirst({ where: { unit, active: true }, select: { id: true } });
+  return !owner;
+}
+
 type RouteParams = { params: Promise<{ id: string }> };
 
 export function createPersonCollectionHandlers(model: Model, resource: Resource) {
@@ -101,6 +109,10 @@ export function createPersonCollectionHandlers(model: Model, resource: Resource)
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
+    if (model === "tenant" && (await unitHasNoOwner((parsed.data as { unit: string }).unit))) {
+      return NextResponse.json({ error: "Apartamento sem proprietário cadastrado" }, { status: 400 });
+    }
+
     const data = prepareWrite(model, parsed.data, false);
     const created = await delegate(model).create({ data, include: includeByModel[model] });
     return NextResponse.json(created, { status: 201 });
@@ -127,6 +139,10 @@ export function createPersonItemHandlers(model: Model, resource: Resource) {
     const parsed = schemaByModel[model].update.safeParse(await req.json());
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+
+    if (model === "tenant" && parsed.data.unit !== undefined && (await unitHasNoOwner(parsed.data.unit))) {
+      return NextResponse.json({ error: "Apartamento sem proprietário cadastrado" }, { status: 400 });
     }
 
     // Activating/deactivating is the soft-delete equivalent — same permission as delete.

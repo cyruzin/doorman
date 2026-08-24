@@ -7,8 +7,9 @@ import type { PersonListParams } from "@/lib/person-client";
 
 const queryKey = ["owners"];
 
-export function useOwners(params: PersonListParams = {}) {
-  return useQuery({ queryKey: [...queryKey, params], queryFn: () => ownersApi.list(params) });
+export function useOwners(params: PersonListParams & { enabled?: boolean } = {}) {
+  const { enabled = true, ...listParams } = params;
+  return useQuery({ queryKey: [...queryKey, listParams], queryFn: () => ownersApi.list(listParams), enabled });
 }
 
 export function useOwnerDetail(id: string | null) {

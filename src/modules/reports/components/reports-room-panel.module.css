@@ -1,0 +1,124 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+}
+
+.roomTitle {
+  font-size: var(--text-lg);
+}
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+}
+
+.filterRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.filterActions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.statusGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.statusOptions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Same switch used by the resident form's "É WhatsApp" toggle. */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.toggleInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toggleTrack {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--color-neutral-300);
+  transition: background-color 0.15s ease;
+}
+
+:root[data-theme="dark"] .toggleTrack {
+  background: var(--color-border-strong);
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-neutral-0);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease;
+}
+
+.toggleInput:checked + .toggleTrack {
+  background: var(--color-success);
+}
+
+.toggleInput:checked + .toggleTrack .toggleThumb {
+  transform: translateX(16px);
+}
+
+.toggleInput:focus-visible + .toggleTrack {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.toggleLabel {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 640px) {
+  .filterRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Overrides the shared data-table header's uppercase styling — plain
+   sentence case reads better for this table (same as the scheduling table). */
+.tableWrapper th {
+  text-transform: none;
+  font-size: var(--text-sm);
+}
