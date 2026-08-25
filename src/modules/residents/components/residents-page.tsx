@@ -5,8 +5,20 @@ import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { can } from "@/lib/permissions";
 import { PersonModulePage } from "@/components/person/person-module-page";
-import { useCreateTenant, useTenantDetail, useTenants, useUpdateTenant } from "@/modules/tenants/hooks/use-tenants";
-import { useCreateOwner, useOwnerDetail, useOwners, useUpdateOwner } from "@/modules/owners/hooks/use-owners";
+import {
+  useCreateTenant,
+  useDeleteTenant,
+  useTenantDetail,
+  useTenants,
+  useUpdateTenant,
+} from "@/modules/tenants/hooks/use-tenants";
+import {
+  useCreateOwner,
+  useDeleteOwner,
+  useOwnerDetail,
+  useOwners,
+  useUpdateOwner,
+} from "@/modules/owners/hooks/use-owners";
 import styles from "./residents-page.module.css";
 
 type Kind = "tenant" | "owner";
@@ -111,6 +123,7 @@ export function ResidentsPage() {
           useItems={useTenants}
           useCreate={useCreateTenant}
           useUpdate={useUpdateTenant}
+          useDelete={useDeleteTenant}
           isCreating={isCreating}
           onCreatingChange={setIsCreating}
           showOwnerField
@@ -126,6 +139,7 @@ export function ResidentsPage() {
           useItems={useOwners}
           useCreate={useCreateOwner}
           useUpdate={useUpdateOwner}
+          useDelete={useDeleteOwner}
           isCreating={isCreating}
           onCreatingChange={setIsCreating}
           relationColumn="tenants"

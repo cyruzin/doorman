@@ -23,6 +23,15 @@ export function HomeIcon({ className }: IconProps) {
   );
 }
 
+export function NoticesIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M4 5.5h16a1 1 0 0 1 1 1V15a1 1 0 0 1-1 1H9l-4 3.5V16H4a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1Z" />
+      <path d="M7.5 9.5h9M7.5 12.5h6" />
+    </svg>
+  );
+}
+
 export function ResidentsIcon({ className }: IconProps) {
   return (
     <svg {...base} className={className}>

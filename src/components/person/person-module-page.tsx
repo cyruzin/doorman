@@ -21,6 +21,7 @@ interface PersonModulePageProps {
   useItems: (params: PersonListParams) => UseQueryResult<PersonListResult>;
   useCreate: () => UseMutationResult<Person, unknown, PersonWriteInput>;
   useUpdate: () => UseMutationResult<Person, unknown, { id: string; data: Partial<PersonWriteInput> }>;
+  useDelete: () => UseMutationResult<void, unknown, string>;
   /** The "novo X" form's open state — owned by the parent so its create button can live next to the tab switcher. */
   isCreating: boolean;
   onCreatingChange: (value: boolean) => void;
@@ -39,6 +40,7 @@ export function PersonModulePage({
   useItems,
   useCreate,
   useUpdate,
+  useDelete,
   isCreating,
   onCreatingChange,
   showOwnerField,
@@ -60,6 +62,7 @@ export function PersonModulePage({
   const items = data?.items ?? [];
   const createMutation = useCreate();
   const updateMutation = useUpdate();
+  const deleteMutation = useDelete();
 
   // `editing` can come from clicking "Editar" in the table (manualEditing holds
   // the full row already in hand) or from a deep link like /residents?editId=...
@@ -68,11 +71,19 @@ export function PersonModulePage({
   const [manualEditing, setManualEditing] = useState<Person | null>(null);
   const [dismissedDeepLink, setDismissedDeepLink] = useState(false);
   const detailQuery = useDetail(dismissedDeepLink ? null : initialEditId);
-  const editing = manualEditing ?? (dismissedDeepLink ? null : detailQuery.data ?? null);
+  // The "Novo X" and "Editar" forms are mutually exclusive — while the parent
+  // has isCreating on, treat any pending edit as hidden rather than syncing
+  // it with an effect (isCreating is the parent's state, not ours to clear).
+  const editing = isCreating ? null : (manualEditing ?? (dismissedDeepLink ? null : detailQuery.data ?? null));
 
   const closeEditing = () => {
     setManualEditing(null);
     setDismissedDeepLink(true);
+  };
+
+  const handleEdit = (person: Person) => {
+    onCreatingChange(false);
+    setManualEditing(person);
   };
 
   const canUpdate = !!role && can(role, resource, "update");
@@ -130,6 +141,24 @@ export function PersonModulePage({
     );
   };
 
+  const handleDelete = (person: Person) => {
+    requestConfirm(
+      async () => {
+        try {
+          await deleteMutation.mutateAsync(person.id);
+          showToast(`${entityLabel} excluído`, "success");
+        } catch {
+          showToast(`Erro ao excluir ${entityLabel.toLowerCase()}`, "error");
+        }
+      },
+      {
+        title: `Excluir ${entityLabel.toLowerCase()}`,
+        description: `Remover ${person.name} definitivamente? Essa ação não pode ser desfeita.`,
+        confirmLabel: "Excluir",
+      },
+    );
+  };
+
   return (
     <div className="page-section">
       {isCreating && (
@@ -179,8 +208,9 @@ export function PersonModulePage({
             items={items}
             canUpdate={canUpdate}
             canDelete={canDelete}
-            onEdit={setManualEditing}
+            onEdit={handleEdit}
             onToggleActive={handleToggleActive}
+            onDelete={handleDelete}
             relationColumn={relationColumn}
           />
           <Pagination page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPageChange={setPage} />

@@ -82,10 +82,12 @@ describe("SchedulingRoomPanel", () => {
     role = "ADMIN";
   });
 
-  it("shows the room's capacity percentage", () => {
+  it("shows the room's capacity percentage for the current month", () => {
     entriesData = { items: [], total: 0, page: 1, pageSize: 20, capacityPercent: 42 };
     renderPanel();
-    expect(screen.getByText("Capacidade: 42%")).toBeInTheDocument();
+
+    const monthName = new Date().toLocaleDateString("pt-BR", { month: "long" });
+    expect(screen.getByText(`Capacidade de ${monthName}: 42%`)).toBeInTheDocument();
   });
 
   it("prioritizes the tenant name over the owner once a unit is picked", async () => {
@@ -403,6 +405,40 @@ describe("SchedulingRoomPanel", () => {
     renderPanel();
 
     expect(screen.getByRole("button", { name: "Excluir" })).toBeInTheDocument();
+  });
+
+  it("badges a finished event as Finalizado, so it explains the month's capacity percentage", () => {
+    entriesData = { items: [entry({ finishedAt: PAST_ISO })], total: 1, page: 1, pageSize: 20, capacityPercent: 90 };
+    renderPanel();
+
+    expect(screen.getByText("Finalizado")).toBeInTheDocument();
+  });
+
+  it("badges a still-open event as Pendente", () => {
+    entriesData = { items: [entry()], total: 1, page: 1, pageSize: 20, capacityPercent: 90 };
+    renderPanel();
+
+    expect(screen.getByText("Pendente")).toBeInTheDocument();
+  });
+
+  it("does not flag a finished event as overdue even if its date has passed", () => {
+    entriesData = {
+      items: [entry({ eventAt: PAST_ISO, finishedAt: PAST_ISO })],
+      total: 1,
+      page: 1,
+      pageSize: 20,
+      capacityPercent: 90,
+    };
+    renderPanel();
+
+    expect(screen.getByText("Tenant Person").closest("tr")).not.toHaveAttribute("class");
+  });
+
+  it("flags a still-pending event as overdue once its date has passed", () => {
+    entriesData = { items: [entry({ eventAt: PAST_ISO })], total: 1, page: 1, pageSize: 20, capacityPercent: 90 };
+    renderPanel();
+
+    expect(screen.getByText("Tenant Person").closest("tr")).toHaveAttribute("class");
   });
 
   it("shows the empty state with no events scheduled", () => {

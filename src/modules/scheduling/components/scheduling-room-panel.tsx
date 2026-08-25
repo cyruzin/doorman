@@ -210,6 +210,7 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
 
   const entries = data?.items ?? [];
   const capacityPercent = data?.capacityPercent ?? 0;
+  const currentMonthName = new Date(now).toLocaleDateString("pt-BR", { month: "long" });
   const isEditing = !!editingEntry;
   const showFields = isEditing || (!!unit && hasResident);
 
@@ -217,7 +218,7 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
     <div className={styles.panel}>
       <div className={`card ${styles.header}`}>
         <h2 className={styles.roomTitle}>{ROOM_LABELS[room]}</h2>
-        <span className="badge badge-info">{`Capacidade: ${capacityPercent}%`}</span>
+        <span className="badge badge-info">{`Capacidade de ${currentMonthName}: ${capacityPercent}%`}</span>
       </div>
 
       <div className={`card ${styles.entryForm}`}>
@@ -376,19 +377,29 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
                   <th>Hora</th>
                   <th>Apartamento</th>
                   <th>Solicitante</th>
+                  <th>Status</th>
                   <th aria-label="Ações" />
                 </tr>
               </thead>
               <tbody>
                 {entries.map((entry) => {
-                  const isPast = new Date(entry.eventAt).getTime() < now;
                   const finished = !!entry.finishedAt;
+                  // A finished event isn't "overdue" anymore — only flag one
+                  // that's still pending and already past its date/time.
+                  const isPast = !finished && new Date(entry.eventAt).getTime() < now;
                   return (
                     <tr key={entry.id} className={isPast ? styles.rowPast : undefined}>
                       <td>{new Date(entry.eventAt).toLocaleDateString("pt-BR")}</td>
                       <td>{formatTime(entry.eventAt)}</td>
                       <td>{entry.unit}</td>
                       <td>{entry.requesterName}</td>
+                      <td>
+                        {finished ? (
+                          <span className="badge badge-success">Finalizado</span>
+                        ) : (
+                          <span className="badge badge-info">Pendente</span>
+                        )}
+                      </td>
                       <td>
                         <div className={styles.actions}>
                           {!finished && (

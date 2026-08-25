@@ -11,6 +11,7 @@ import {
   BackupsIcon,
   HomeIcon,
   MezaninoIcon,
+  NoticesIcon,
   ReportsIcon,
   ResidentsIcon,
   SchedulingIcon,
@@ -20,6 +21,7 @@ import { NavClock } from "./nav-clock";
 
 const links = [
   { href: "/", label: "Início", Icon: HomeIcon },
+  { href: "/notices", label: "Recados", resources: ["notices"] as Resource[], Icon: NoticesIcon },
   { href: "/apartments", label: "Apartamentos", resources: ["tenants", "owners"] as Resource[], Icon: ApartmentsIcon },
   { href: "/mezanino", label: "Mezanino", resources: ["mezanino"] as Resource[], Icon: MezaninoIcon },
   { href: "/scheduling", label: "Agendamentos", resources: ["scheduling"] as Resource[], Icon: SchedulingIcon },

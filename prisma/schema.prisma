@@ -126,6 +126,23 @@ model SchedulingEntry {
   @@index([room, eventAt])
 }
 
+// A free-text handover note between porteiros ("livro de plantão") — not tied
+// to login/logout, just a message any porteiro leaves for whoever's next.
+// isAutomatic marks a future system-generated entry (nothing creates one yet)
+// so the delete rule can already tell it apart from a manually written one.
+model Notice {
+  id             String   @id @default(cuid())
+  message        String
+  authorUsername String
+  // Surfaces this note in the last-5 list on the home dashboard, as a
+  // heads-up for the next porteiro coming on shift.
+  showOnHome     Boolean  @default(false)
+  isAutomatic    Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 // A resident can have more than one vehicle — same shape as Phone.
 model Vehicle {
   id       String  @id @default(cuid())

@@ -472,7 +472,7 @@ select.input {
 /* ---------- page layout ---------- */
 
 .page {
-  max-width: 1600px;
+  max-width: 1800px;
   padding: var(--space-6) var(--space-5);
   display: flex;
   flex-direction: column;

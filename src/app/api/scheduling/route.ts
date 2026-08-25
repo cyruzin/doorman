@@ -19,13 +19,20 @@ export async function GET(req: NextRequest) {
   }
 
   const { page, pageSize, skip } = parsePagination(req);
-  // Finished and cancelled events fall off the listing — the doorman only
-  // needs to see what's still upcoming or awaiting action. They still show
-  // up in /reports, which reports on closed bookings.
-  const where = { room, finishedAt: null, cancelledAt: null };
+  // Cancelled events fall off the listing — they never happened. Finished
+  // ones stay, so the capacity percentage (which counts them) is explained
+  // by what's visibly in the list instead of silently disappearing.
+  const where = { room, cancelledAt: null };
 
   const [items, total, capacityPercent] = await Promise.all([
-    prisma.schedulingEntry.findMany({ where, orderBy: { eventAt: "desc" }, skip, take: pageSize }),
+    // Pending entries (finishedAt: null) first — they're what needs
+    // attention — then finished ones, each group newest-event-first.
+    prisma.schedulingEntry.findMany({
+      where,
+      orderBy: [{ finishedAt: { sort: "asc", nulls: "first" } }, { eventAt: "desc" }],
+      skip,
+      take: pageSize,
+    }),
     prisma.schedulingEntry.count({ where }),
     getCapacityPercent(room),
   ]);

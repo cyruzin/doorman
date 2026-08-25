@@ -3,9 +3,14 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 let sessionRole: string | null = "ADMIN";
+let urlRoom: string | null = null;
 
 vi.mock("next-auth/react", () => ({
   useSession: () => ({ data: sessionRole ? { user: { id: "1", name: "admin", role: sessionRole } } : null }),
+}));
+
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(urlRoom ? { room: urlRoom } : {}),
 }));
 
 vi.mock("../components/scheduling-room-panel", () => ({
@@ -32,5 +37,21 @@ describe("SchedulingPage", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /grill/i }));
     expect(screen.getByTestId("panel")).toHaveTextContent("GRILL");
+  });
+
+  it("opens directly on the room given by the ?room= query param", () => {
+    sessionRole = "ADMIN";
+    urlRoom = "GRILL";
+    render(<SchedulingPage />);
+    expect(screen.getByTestId("panel")).toHaveTextContent("GRILL");
+    urlRoom = null;
+  });
+
+  it("falls back to the party hall panel for an invalid ?room= value", () => {
+    sessionRole = "ADMIN";
+    urlRoom = "not-a-room";
+    render(<SchedulingPage />);
+    expect(screen.getByTestId("panel")).toHaveTextContent("PARTY_HALL");
+    urlRoom = null;
   });
 });

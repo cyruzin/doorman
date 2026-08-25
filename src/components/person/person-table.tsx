@@ -10,11 +10,12 @@ interface PersonTableProps {
   canDelete: boolean;
   onEdit: (person: Person) => void;
   onToggleActive: (person: Person) => void;
+  onDelete: (person: Person) => void;
   /** "owner" shows who each tenant rents from; "tenants" shows who's renting from each owner. */
   relationColumn?: "owner" | "tenants";
 }
 
-export function PersonTable({ items, canUpdate, canDelete, onEdit, onToggleActive, relationColumn }: PersonTableProps) {
+export function PersonTable({ items, canUpdate, canDelete, onEdit, onToggleActive, onDelete, relationColumn }: PersonTableProps) {
   if (items.length === 0) {
     return <p className="text-muted">Nenhum registro encontrado.</p>;
   }
@@ -83,6 +84,13 @@ export function PersonTable({ items, canUpdate, canDelete, onEdit, onToggleActiv
                         onClick={() => onToggleActive(person)}
                       >
                         {person.active ? "Desativar" : "Reativar"}
+                      </button>
+                    )}
+                    {/* Hard delete only makes sense once the record is already inactive — an active
+                        resident must be deactivated first, same rule as the users screen's super admin guard. */}
+                    {canDelete && !person.active && (
+                      <button type="button" className="btn btn-danger" onClick={() => onDelete(person)}>
+                        Excluir
                       </button>
                     )}
                   </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { can } from "@/lib/permissions";
 import { SCHEDULING_ROOMS, ROOM_LABELS, type SchedulingRoom } from "../types";
@@ -17,7 +18,13 @@ const ROOM_ICONS: Record<SchedulingRoom, typeof PartyHallIcon> = {
 export function SchedulingPage() {
   const { data: session } = useSession();
   const role = session?.user?.role;
-  const [room, setRoom] = useState<SchedulingRoom>("PARTY_HALL");
+  const searchParams = useSearchParams();
+
+  // Deep-linked from the dashboard's capacity/upcoming-events cards, e.g. /scheduling?room=GRILL.
+  const urlRoom = searchParams.get("room");
+  const [room, setRoom] = useState<SchedulingRoom>(
+    SCHEDULING_ROOMS.includes(urlRoom as SchedulingRoom) ? (urlRoom as SchedulingRoom) : "PARTY_HALL",
+  );
 
   const canView = !!role && can(role, "scheduling", "read");
 

@@ -21,6 +21,7 @@ vi.mock("@/modules/tenants/hooks/use-tenants", () => ({
   useTenants: () => ({ data: undefined, isLoading: false }),
   useCreateTenant: () => ({ mutateAsync: vi.fn() }),
   useUpdateTenant: () => ({ mutateAsync: vi.fn() }),
+  useDeleteTenant: () => ({ mutateAsync: vi.fn() }),
   useTenantDetail: () => ({ data: undefined }),
 }));
 
@@ -28,6 +29,7 @@ vi.mock("@/modules/owners/hooks/use-owners", () => ({
   useOwners: () => ({ data: { items: ownersItems, total: ownersItems.length, page: 1, pageSize: 100 } }),
   useCreateOwner: () => ({ mutateAsync: vi.fn() }),
   useUpdateOwner: () => ({ mutateAsync: vi.fn() }),
+  useDeleteOwner: () => ({ mutateAsync: vi.fn() }),
   useOwnerDetail: () => ({ data: undefined }),
 }));
 

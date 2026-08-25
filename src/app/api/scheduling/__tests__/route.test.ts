@@ -78,7 +78,18 @@ describe("GET /api/scheduling", () => {
     expect(findMany.mock.calls[1][0]).toMatchObject({ where: expect.objectContaining({ cancelledAt: null }) });
   });
 
-  it("excludes finished and cancelled events from the listing", async () => {
+  it("excludes cancelled events but keeps finished ones in the listing", async () => {
+    requirePermission.mockResolvedValue({ session: {}, error: null });
+    findMany.mockResolvedValue([]);
+    count.mockResolvedValue(0);
+
+    await GET(new NextRequest("http://localhost/api/scheduling?room=CINEMA"));
+
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { room: "CINEMA", cancelledAt: null } }));
+    expect(count).toHaveBeenCalledWith({ where: { room: "CINEMA", cancelledAt: null } });
+  });
+
+  it("orders pending entries before finished ones", async () => {
     requirePermission.mockResolvedValue({ session: {}, error: null });
     findMany.mockResolvedValue([]);
     count.mockResolvedValue(0);
@@ -86,9 +97,10 @@ describe("GET /api/scheduling", () => {
     await GET(new NextRequest("http://localhost/api/scheduling?room=CINEMA"));
 
     expect(findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { room: "CINEMA", finishedAt: null, cancelledAt: null } }),
+      expect.objectContaining({
+        orderBy: [{ finishedAt: { sort: "asc", nulls: "first" } }, { eventAt: "desc" }],
+      }),
     );
-    expect(count).toHaveBeenCalledWith({ where: { room: "CINEMA", finishedAt: null, cancelledAt: null } });
   });
 });
 
