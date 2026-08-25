@@ -267,6 +267,24 @@ describe("SchedulingRoomPanel", () => {
     expect(screen.getByRole("cell", { name: "202" })).toBeInTheDocument();
   });
 
+  it("shows Sim or Não for the multiple-events column based on allowMultipleSameDay", () => {
+    entriesData = {
+      items: [
+        entry({ id: "e1", allowMultipleSameDay: true }),
+        entry({ id: "e2", allowMultipleSameDay: false }),
+      ],
+      total: 2,
+      page: 1,
+      pageSize: 20,
+      capacityPercent: 90,
+    };
+    renderPanel();
+
+    expect(screen.getByText("Mais de um evento")).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "Sim" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "Não" })).toBeInTheDocument();
+  });
+
   it("switches to edit mode with the button labeled Alterar", async () => {
     entriesData = { items: [entry()], total: 1, page: 1, pageSize: 20, capacityPercent: 90 };
     renderPanel();

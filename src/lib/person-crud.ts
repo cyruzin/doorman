@@ -63,12 +63,12 @@ function prepareWrite(model: Model, data: Record<string, unknown>, isUpdate: boo
   return toNestedWrites(normalizeOwnerId(model, data), isUpdate);
 }
 
-// A tenant always rents from an owner — reject the write if nobody is
-// registered as the owner of that unit, regardless of which owner (if any)
-// was picked as the locador.
-async function unitHasNoOwner(unit: string): Promise<boolean> {
+// A tenant always rents from an owner and is linked to whoever is registered
+// for their unit — there's nothing for the porteiro to pick, the apartment
+// number already implies it. Reject the write if nobody is registered yet.
+async function findOwnerIdForUnit(unit: string): Promise<string | null> {
   const owner = await prisma.owner.findFirst({ where: { unit, active: true }, select: { id: true } });
-  return !owner;
+  return owner?.id ?? null;
 }
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -109,8 +109,12 @@ export function createPersonCollectionHandlers(model: Model, resource: Resource)
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
-    if (model === "tenant" && (await unitHasNoOwner((parsed.data as { unit: string }).unit))) {
-      return NextResponse.json({ error: "Apartamento sem proprietário cadastrado" }, { status: 400 });
+    if (model === "tenant") {
+      const ownerId = await findOwnerIdForUnit((parsed.data as { unit: string }).unit);
+      if (!ownerId) {
+        return NextResponse.json({ error: "Apartamento sem proprietário cadastrado" }, { status: 400 });
+      }
+      (parsed.data as Record<string, unknown>).ownerId = ownerId;
     }
 
     const data = prepareWrite(model, parsed.data, false);
@@ -141,8 +145,12 @@ export function createPersonItemHandlers(model: Model, resource: Resource) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
-    if (model === "tenant" && parsed.data.unit !== undefined && (await unitHasNoOwner(parsed.data.unit))) {
-      return NextResponse.json({ error: "Apartamento sem proprietário cadastrado" }, { status: 400 });
+    if (model === "tenant" && parsed.data.unit !== undefined) {
+      const ownerId = await findOwnerIdForUnit(parsed.data.unit);
+      if (!ownerId) {
+        return NextResponse.json({ error: "Apartamento sem proprietário cadastrado" }, { status: 400 });
+      }
+      (parsed.data as Record<string, unknown>).ownerId = ownerId;
     }
 
     // Activating/deactivating is the soft-delete equivalent — same permission as delete.

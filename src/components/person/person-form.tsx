@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { tenantSchema } from "@/lib/validations/person";
@@ -7,7 +8,7 @@ import type { Person, PersonWriteInput } from "@/lib/person-client";
 import { maskCpf, maskPhone, unmask } from "@/lib/helpers/masks";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useUnitOccupancy } from "@/modules/apartments/hooks/use-unit-occupancy";
-import { OwnerPicker } from "./owner-picker";
+import { getAllUnits, getFloors, getUnitNumber, getUnitsPerFloor } from "@/lib/building";
 import styles from "./person-form.module.css";
 
 interface PersonFormProps {
@@ -15,7 +16,7 @@ interface PersonFormProps {
   onSubmit: (data: PersonWriteInput) => Promise<void> | void;
   onCancel: () => void;
   submitLabel?: string;
-  /** Renders the "Proprietário" picker and enforces the unit-has-an-owner rule — used only for the Tenant form. */
+  /** Enforces the unit-has-an-owner rule (owner is auto-linked server-side by unit) — used only for the Tenant form. */
   showOwnerField?: boolean;
 }
 
@@ -39,13 +40,20 @@ export function PersonForm({ defaultValues, onSubmit, onCancel, submitLabel = "S
           active: defaultValues.active,
           phones: defaultValues.phones.map((p) => ({ number: p.number, isWhatsapp: p.isWhatsapp })),
           vehicles: defaultValues.vehicles.map((v) => ({ plate: v.plate ?? undefined, model: v.model ?? undefined })),
-          ownerId: defaultValues.owner?.id ?? "",
         }
       : { active: true, phones: [], vehicles: [] },
   });
 
   const phoneFields = useFieldArray({ control, name: "phones" });
   const vehicleFields = useFieldArray({ control, name: "vehicles" });
+
+  // Only the mobile two-step picker needs this — it narrows the unit list to
+  // one floor at a time. Seeded from the unit being edited, e.g. "506" -> 5
+  // (unit = floor + 2-digit position, so the floor is everything but the last 2 chars).
+  const [floor, setFloor] = useState(() => Number(defaultValues?.unit?.slice(0, -2)) || 1);
+  const floors = getFloors();
+  const allUnits = getAllUnits();
+  const floorUnits = Array.from({ length: getUnitsPerFloor(floor) }, (_, i) => getUnitNumber(floor, i + 1));
 
   // A tenant always rents from an owner — check live as the unit is typed so
   // this can't be submitted for an apartment with nobody registered as its owner.
@@ -73,9 +81,68 @@ export function PersonForm({ defaultValues, onSubmit, onCancel, submitLabel = "S
         </div>
 
         <div className="form-field">
-          <label htmlFor="unit">Apartamento</label>
-          <input id="unit" className="input" {...register("unit")} />
+          <label>Apartamento</label>
+          <Controller
+            name="unit"
+            control={control}
+            render={({ field }) => (
+              <>
+                <select
+                  className={`input ${styles.desktopOnly}`}
+                  aria-label="Apartamento"
+                  value={field.value ?? ""}
+                  onChange={(e) => field.onChange(e.target.value)}
+                >
+                  <option value="">Selecione o apartamento</option>
+                  {floors.map((f) => (
+                    <optgroup key={f} label={`${f}º andar`}>
+                      {allUnits
+                        .filter((u) => u.floor === f)
+                        .map((u) => (
+                          <option key={u.unit} value={u.unit}>
+                            {u.unit}
+                          </option>
+                        ))}
+                    </optgroup>
+                  ))}
+                </select>
+
+                <div className={styles.mobileOnly}>
+                  <select
+                    className="input"
+                    aria-label="Andar"
+                    value={floor}
+                    onChange={(e) => setFloor(Number(e.target.value))}
+                  >
+                    {floors.map((f) => (
+                      <option key={f} value={f}>
+                        {f}º andar
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="input"
+                    aria-label="Apartamento"
+                    value={field.value ?? ""}
+                    onChange={(e) => field.onChange(e.target.value)}
+                  >
+                    <option value="">Selecione o apartamento</option>
+                    {floorUnits.map((u) => (
+                      <option key={u} value={u}>
+                        {u}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+          />
           {errors.unit && <span className="field-error">{errors.unit.message}</span>}
+          {showOwnerField && unitHasNoOwner && (
+            <span className="field-error">
+              Não há proprietário cadastrado para o apartamento {unitValue}. Cadastre o proprietário antes de continuar.
+            </span>
+          )}
         </div>
 
         <div className="form-field">
@@ -102,30 +169,6 @@ export function PersonForm({ defaultValues, onSubmit, onCancel, submitLabel = "S
           {errors.email && <span className="field-error">{errors.email.message}</span>}
         </div>
 
-        {showOwnerField && (
-          <div className="form-field">
-            <label htmlFor="ownerId">Proprietário (locador)</label>
-            <Controller
-              name="ownerId"
-              control={control}
-              render={({ field }) => (
-                <OwnerPicker
-                  id="ownerId"
-                  value={field.value ?? ""}
-                  defaultLabel={
-                    defaultValues?.owner ? `${defaultValues.owner.name} (apto ${defaultValues.owner.unit})` : undefined
-                  }
-                  onChange={field.onChange}
-                />
-              )}
-            />
-            {unitHasNoOwner && (
-              <span className="field-error">
-                Não há proprietário cadastrado para o apartamento {unitValue}. Cadastre o proprietário antes de continuar.
-              </span>
-            )}
-          </div>
-        )}
       </div>
 
       <div className={styles.section}>

@@ -36,17 +36,29 @@ vi.mock("@/modules/owners/hooks/use-owners", () => ({
 import { ResidentsPage } from "../residents-page";
 
 describe("ResidentsPage", () => {
-  it("disables Novo inquilino and warns when there are no owners yet", () => {
+  it("defaults to the Proprietários tab, since owners take priority over tenants", () => {
     ownersItems = [];
     render(<ResidentsPage />);
+
+    expect(screen.getByRole("tab", { name: /proprietários/i })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("button", { name: /novo proprietário/i })).toBeInTheDocument();
+  });
+
+  it("disables Novo inquilino and warns when there are no owners yet", async () => {
+    ownersItems = [];
+    render(<ResidentsPage />);
+
+    await userEvent.click(screen.getByRole("tab", { name: /inquilinos/i }));
 
     expect(screen.getByRole("button", { name: /novo inquilino/i })).toBeDisabled();
     expect(screen.getByText(/cadastre um proprietário antes de cadastrar um inquilino/i)).toBeInTheDocument();
   });
 
-  it("enables Novo inquilino once an owner exists", () => {
+  it("enables Novo inquilino once an owner exists", async () => {
     ownersItems = [{ id: "o1", name: "Owner", unit: "101" } as Person];
     render(<ResidentsPage />);
+
+    await userEvent.click(screen.getByRole("tab", { name: /inquilinos/i }));
 
     expect(screen.getByRole("button", { name: /novo inquilino/i })).toBeEnabled();
     expect(screen.queryByText(/cadastre um proprietário/i)).not.toBeInTheDocument();

@@ -377,6 +377,7 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
                   <th>Hora</th>
                   <th>Apartamento</th>
                   <th>Solicitante</th>
+                  <th>Mais de um evento</th>
                   <th>Status</th>
                   <th aria-label="Ações" />
                 </tr>
@@ -393,6 +394,7 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
                       <td>{formatTime(entry.eventAt)}</td>
                       <td>{entry.unit}</td>
                       <td>{entry.requesterName}</td>
+                      <td>{entry.allowMultipleSameDay ? "Sim" : "Não"}</td>
                       <td>
                         {finished ? (
                           <span className="badge badge-success">Finalizado</span>

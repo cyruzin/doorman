@@ -19,6 +19,22 @@
   color: var(--color-text-muted);
 }
 
+.mobileOnly {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .desktopOnly {
+    display: none;
+  }
+
+  .mobileOnly {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+}
+
 .repeatingRow {
   display: flex;
   align-items: flex-end;

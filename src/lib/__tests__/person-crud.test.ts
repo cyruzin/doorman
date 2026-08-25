@@ -83,7 +83,7 @@ describe("tenant/owner unit-has-an-owner rule", () => {
     expect(tenantCreate).not.toHaveBeenCalled();
   });
 
-  it("allows creating a tenant when the unit has an active owner", async () => {
+  it("allows creating a tenant when the unit has an active owner, auto-linking to it", async () => {
     ownerFindFirst.mockResolvedValue({ id: "o1" });
     tenantCreate.mockResolvedValue({ id: "t1" });
 
@@ -91,7 +91,7 @@ describe("tenant/owner unit-has-an-owner rule", () => {
 
     expect(res.status).toBe(201);
     expect(ownerFindFirst).toHaveBeenCalledWith({ where: { unit: "101", active: true }, select: { id: true } });
-    expect(tenantCreate).toHaveBeenCalled();
+    expect(tenantCreate).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ ownerId: "o1" }) }));
   });
 
   it("does not apply the owner check when creating an owner", async () => {
@@ -113,6 +113,16 @@ describe("tenant/owner unit-has-an-owner rule", () => {
     expect(res.status).toBe(400);
     expect(body.error).toMatch(/sem proprietário cadastrado/i);
     expect(tenantUpdate).not.toHaveBeenCalled();
+  });
+
+  it("re-links a tenant to the new unit's owner when the unit changes", async () => {
+    ownerFindFirst.mockResolvedValue({ id: "o2" });
+    tenantUpdate.mockResolvedValue({ id: "t1" });
+
+    const res = await patchTenant(patchRequest("http://localhost/api/tenants/t1", { unit: "202" }), params("t1"));
+
+    expect(res.status).toBe(200);
+    expect(tenantUpdate).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ ownerId: "o2" }) }));
   });
 
   it("allows updating a tenant without touching unit, skipping the owner check", async () => {

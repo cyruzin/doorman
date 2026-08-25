@@ -1,16 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { UnitOccupancy } from "@/modules/apartments/types";
+import type { Person } from "@/lib/person-client";
 
 let unitOccupancy: UnitOccupancy | undefined;
 
 vi.mock("@/modules/apartments/hooks/use-unit-occupancy", () => ({
   useUnitOccupancy: (unit: string | null) => ({ data: unit ? unitOccupancy : undefined }),
-}));
-
-vi.mock("@/modules/owners/hooks/use-owners", () => ({
-  useOwners: () => ({ data: { items: [], total: 0, page: 1, pageSize: 10 }, isFetching: false }),
 }));
 
 import { PersonForm } from "../person-form";
@@ -37,7 +34,7 @@ describe("PersonForm", () => {
     render(<PersonForm onSubmit={onSubmit} onCancel={() => {}} />);
 
     await userEvent.type(screen.getByLabelText(/^nome$/i), "Maria Silva");
-    await userEvent.type(screen.getByLabelText(/^apartamento$/i), "101");
+    await userEvent.selectOptions(screen.getAllByLabelText(/^apartamento$/i)[0], "101");
     await userEvent.click(screen.getByRole("button", { name: /salvar/i }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
@@ -48,7 +45,7 @@ describe("PersonForm", () => {
     render(<PersonForm onSubmit={onSubmit} onCancel={() => {}} />);
 
     await userEvent.type(screen.getByLabelText(/^nome$/i), "Maria Silva");
-    await userEvent.type(screen.getByLabelText(/^apartamento$/i), "101");
+    await userEvent.selectOptions(screen.getAllByLabelText(/^apartamento$/i)[0], "101");
 
     await userEvent.click(screen.getByRole("button", { name: /adicionar telefone/i }));
     await userEvent.click(screen.getByRole("button", { name: /adicionar telefone/i }));
@@ -71,7 +68,7 @@ describe("PersonForm", () => {
     render(<PersonForm onSubmit={onSubmit} onCancel={() => {}} />);
 
     await userEvent.type(screen.getByLabelText(/^nome$/i), "Maria Silva");
-    await userEvent.type(screen.getByLabelText(/^apartamento$/i), "101");
+    await userEvent.selectOptions(screen.getAllByLabelText(/^apartamento$/i)[0], "101");
     await userEvent.type(screen.getByLabelText(/^cpf$/i), "12345678900");
     expect(screen.getByLabelText(/^cpf$/i)).toHaveValue("123.456.789-00");
 
@@ -97,7 +94,7 @@ describe("PersonForm", () => {
     const onSubmit = vi.fn();
     render(<PersonForm onSubmit={onSubmit} onCancel={() => {}} showOwnerField />);
 
-    await userEvent.type(screen.getByLabelText(/^apartamento$/i), "101");
+    await userEvent.selectOptions(screen.getAllByLabelText(/^apartamento$/i)[0], "101");
 
     expect(await screen.findByText(/não há proprietário cadastrado para o apartamento 101/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^salvar$/i })).toBeDisabled();
@@ -110,11 +107,45 @@ describe("PersonForm", () => {
     render(<PersonForm onSubmit={onSubmit} onCancel={() => {}} showOwnerField />);
 
     await userEvent.type(screen.getByLabelText(/^nome$/i), "Maria Silva");
-    await userEvent.type(screen.getByLabelText(/^apartamento$/i), "101");
+    await userEvent.selectOptions(screen.getAllByLabelText(/^apartamento$/i)[0], "101");
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /^salvar$/i })).toBeEnabled();
     });
     expect(screen.queryByText(/não há proprietário cadastrado/i)).not.toBeInTheDocument();
+  });
+
+  it("never renders a manual owner picker for the Tenant form, only the missing-owner warning", () => {
+    unitOccupancy = { owners: [], tenants: [] };
+    render(<PersonForm onSubmit={vi.fn()} onCancel={() => {}} showOwnerField />);
+    expect(screen.queryByPlaceholderText(/buscar proprietário por nome/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^proprietário/i)).not.toBeInTheDocument();
+  });
+
+  it("renders Apartamento as a select limited to valid building units, not free text", () => {
+    render(<PersonForm onSubmit={vi.fn()} onCancel={() => {}} />);
+    const [unitSelect] = screen.getAllByLabelText(/^apartamento$/i);
+    expect(unitSelect.tagName).toBe("SELECT");
+    expect(within(unitSelect).getByRole("option", { name: "101" })).toBeInTheDocument();
+    expect(within(unitSelect).getByRole("option", { name: "1901" })).toBeInTheDocument();
+    expect(within(unitSelect).queryByRole("option", { name: "150" })).not.toBeInTheDocument();
+    expect(within(unitSelect).queryByRole("option", { name: "1903" })).not.toBeInTheDocument();
+  });
+
+  it("pre-selects the mobile floor picker to match the unit being edited", () => {
+    const defaultValues: Person = {
+      id: "p1",
+      name: "Maria Santos",
+      cpf: null,
+      email: null,
+      unit: "506",
+      active: true,
+      phones: [],
+      vehicles: [],
+      createdAt: "",
+      updatedAt: "",
+    };
+    render(<PersonForm defaultValues={defaultValues} onSubmit={vi.fn()} onCancel={() => {}} />);
+    expect(screen.getByLabelText("Andar")).toHaveValue("5");
   });
 });

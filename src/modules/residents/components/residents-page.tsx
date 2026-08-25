@@ -36,7 +36,7 @@ export function ResidentsPage() {
 
   const [kind, setKind] = useState<Kind>(() => {
     if (urlKind === "tenant" || urlKind === "owner") return urlKind;
-    return canSeeTenants ? "tenant" : "owner";
+    return canSeeOwners ? "owner" : "tenant";
   });
   const [isCreating, setIsCreating] = useState(false);
 
@@ -45,8 +45,8 @@ export function ResidentsPage() {
     setIsCreating(false);
   };
 
-  // A cheap existence check (not a full list) — the tenant form's own owner
-  // picker handles the actual search-by-name lookup.
+  // A cheap existence check (not a full list) — just enough to know whether
+  // any owner exists at all, to gate tenant creation.
   const { data: ownerExistence } = useOwners({ pageSize: 1, status: "active" });
   const hasAnyOwner = (ownerExistence?.total ?? 0) > 0;
 
@@ -75,20 +75,20 @@ export function ResidentsPage() {
               <button
                 type="button"
                 role="tab"
-                aria-selected={kind === "tenant"}
-                className={kind === "tenant" ? "segmented-option active" : "segmented-option"}
-                onClick={() => handleKindChange("tenant")}
-              >
-                Inquilinos
-              </button>
-              <button
-                type="button"
-                role="tab"
                 aria-selected={kind === "owner"}
                 className={kind === "owner" ? "segmented-option active" : "segmented-option"}
                 onClick={() => handleKindChange("owner")}
               >
                 Proprietários
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={kind === "tenant"}
+                className={kind === "tenant" ? "segmented-option active" : "segmented-option"}
+                onClick={() => handleKindChange("tenant")}
+              >
+                Inquilinos
               </button>
             </div>
           )}
