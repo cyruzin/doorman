@@ -21,16 +21,21 @@
   color: var(--color-text-muted);
 }
 
-.list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  font-size: var(--text-sm);
+/* The owner and resident tables are separate <table> elements stacked
+   vertically — with the default auto layout, each sizes its own "Nome"
+   column to its own longest name, so the "Contato" columns drift out of
+   alignment between the two. Fixing both to the same column widths keeps
+   them lined up regardless of how long any one name is. */
+.detailTable {
+  table-layout: fixed;
 }
 
-.phones {
-  color: var(--color-text-muted);
+.detailTable th:first-child,
+.detailTable td:first-child {
+  width: 70%;
+  /* A long name shouldn't force the column past its fixed width — wrap it
+     instead of overflowing (the global th/td rule defaults to nowrap). */
+  white-space: normal;
 }
 
 .personLink {

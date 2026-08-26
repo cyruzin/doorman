@@ -9,8 +9,7 @@ vi.mock("@/lib/api-guard", () => ({
 const findMany = vi.fn();
 const count = vi.fn();
 const create = vi.fn();
-const tenantFindFirst = vi.fn();
-const ownerFindFirst = vi.fn();
+const residentFindFirst = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -19,8 +18,7 @@ vi.mock("@/lib/prisma", () => ({
       count: (...args: unknown[]) => count(...args),
       create: (...args: unknown[]) => create(...args),
     },
-    tenant: { findFirst: (...args: unknown[]) => tenantFindFirst(...args) },
-    owner: { findFirst: (...args: unknown[]) => ownerFindFirst(...args) },
+    resident: { findFirst: (...args: unknown[]) => residentFindFirst(...args) },
   },
 }));
 
@@ -65,8 +63,7 @@ describe("GET /api/mezanino", () => {
 describe("POST /api/mezanino", () => {
   beforeEach(() => {
     requirePermission.mockReset();
-    tenantFindFirst.mockReset();
-    ownerFindFirst.mockReset();
+    residentFindFirst.mockReset();
     create.mockReset();
   });
 
@@ -82,52 +79,40 @@ describe("POST /api/mezanino", () => {
     const denied = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     requirePermission.mockResolvedValue({ session: null, error: denied });
 
-    const res = await POST(postRequest({ room: "GYM", unit: "101" }));
+    const res = await POST(postRequest({ room: "GYM", unit: "101", residentId: "t1" }));
     expect(res.status).toBe(401);
   });
 
   it("rejects an invalid body", async () => {
     requirePermission.mockResolvedValue({ session: {}, error: null });
 
-    const res = await POST(postRequest({ room: "SAUNA", unit: "101" }));
+    const res = await POST(postRequest({ room: "SAUNA", unit: "101", residentId: "t1" }));
     expect(res.status).toBe(400);
   });
 
-  it("rejects a unit with no active resident", async () => {
+  it("rejects a residentId that isn't an active resident of the unit", async () => {
     requirePermission.mockResolvedValue({ session: {}, error: null });
-    tenantFindFirst.mockResolvedValue(null);
-    ownerFindFirst.mockResolvedValue(null);
+    residentFindFirst.mockResolvedValue(null);
 
-    const res = await POST(postRequest({ room: "GYM", unit: "101" }));
+    const res = await POST(postRequest({ room: "GYM", unit: "101", residentId: "t1" }));
     expect(res.status).toBe(400);
     expect(create).not.toHaveBeenCalled();
   });
 
-  it("prefers the tenant name over the owner when both exist", async () => {
+  it("creates the entry with the resident matched by residentId", async () => {
     requirePermission.mockResolvedValue({ session: {}, error: null });
-    tenantFindFirst.mockResolvedValue({ name: "Tenant Person" });
-    ownerFindFirst.mockResolvedValue({ name: "Owner Person" });
-    create.mockResolvedValue({ id: "e1", room: "GYM", unit: "101", residentName: "Tenant Person" });
+    residentFindFirst.mockResolvedValue({ name: "Resident Person" });
+    create.mockResolvedValue({ id: "e1", room: "GYM", unit: "101", residentName: "Resident Person" });
 
-    const res = await POST(postRequest({ room: "GYM", unit: "101" }));
+    const res = await POST(postRequest({ room: "GYM", unit: "101", residentId: "t1" }));
 
     expect(res.status).toBe(201);
-    expect(create).toHaveBeenCalledWith({
-      data: { room: "GYM", unit: "101", residentName: "Tenant Person" },
+    expect(residentFindFirst).toHaveBeenCalledWith({
+      where: { id: "t1", unit: "101", active: true },
+      select: { name: true },
     });
-  });
-
-  it("falls back to the owner name when there is no active tenant", async () => {
-    requirePermission.mockResolvedValue({ session: {}, error: null });
-    tenantFindFirst.mockResolvedValue(null);
-    ownerFindFirst.mockResolvedValue({ name: "Owner Person" });
-    create.mockResolvedValue({ id: "e1", room: "GYM", unit: "101", residentName: "Owner Person" });
-
-    const res = await POST(postRequest({ room: "GYM", unit: "101" }));
-
-    expect(res.status).toBe(201);
     expect(create).toHaveBeenCalledWith({
-      data: { room: "GYM", unit: "101", residentName: "Owner Person" },
+      data: { room: "GYM", unit: "101", residentName: "Resident Person" },
     });
   });
 });

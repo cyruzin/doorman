@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ToastProvider } from "@/components/toast/toast-provider";
 import { ConfirmProvider } from "@/components/confirm/confirm-provider";
@@ -18,7 +18,7 @@ let entriesData: SchedulingListResult | undefined = {
   pageSize: 20,
   capacityPercent: 100,
 };
-let occupancyData: UnitOccupancy = { owners: [], tenants: [] };
+let occupancyData: UnitOccupancy = { owner: null, residents: [] };
 let isLoading = false;
 let role: "ADMIN" | "DOORMAN" = "ADMIN";
 
@@ -48,7 +48,7 @@ function entry(overrides: Partial<SchedulingEntry> = {}): SchedulingEntry {
     id: "e1",
     room: "PARTY_HALL",
     unit: "101",
-    requesterName: "Tenant Person",
+    requesterName: "Resident Person",
     eventAt: FUTURE_ISO,
     allowMultipleSameDay: false,
     notes: null,
@@ -58,6 +58,13 @@ function entry(overrides: Partial<SchedulingEntry> = {}): SchedulingEntry {
     cancelledByUsername: null,
     ...overrides,
   };
+}
+
+// The grid renders both a desktop table and a mobile floor-first picker at
+// once (CSS hides one via a media query JSDOM doesn't evaluate) — the first
+// match is always the desktop button.
+function unitButton(unit: string) {
+  return screen.getAllByRole("button", { name: unit })[0];
 }
 
 function renderPanel() {
@@ -77,7 +84,7 @@ describe("SchedulingRoomPanel", () => {
     mutateAsyncFinish.mockClear();
     mutateAsyncDelete.mockClear();
     entriesData = { items: [], total: 0, page: 1, pageSize: 20, capacityPercent: 100 };
-    occupancyData = { owners: [], tenants: [] };
+    occupancyData = { owner: null, residents: [] };
     isLoading = false;
     role = "ADMIN";
   });
@@ -90,53 +97,57 @@ describe("SchedulingRoomPanel", () => {
     expect(screen.getByText(`Capacidade de ${monthName}: 42%`)).toBeInTheDocument();
   });
 
-  it("prioritizes the tenant name over the owner once a unit is picked", async () => {
+  it("only lists actual residents in the resident select, never the owner", async () => {
     occupancyData = {
-      owners: [{ id: "o1", name: "Owner Person", phones: [] }],
-      tenants: [{ id: "t1", name: "Tenant Person", phones: [] }],
+      owner: { id: "o1", name: "Owner Person", phones: [] },
+      residents: [{ id: "t1", name: "Resident Person", isOwner: false, phones: [] }],
     };
     renderPanel();
 
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
+    await userEvent.click(unitButton("101"));
 
-    expect(await screen.findByText("Tenant Person")).toBeInTheDocument();
+    expect(await screen.findByText("Resident Person")).toBeInTheDocument();
+    expect(screen.queryByText("Owner Person")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
-  });
-
-  it("falls back to the owner name when there is no active tenant", async () => {
-    occupancyData = { owners: [{ id: "o1", name: "Owner Person", phones: [] }], tenants: [] };
-    renderPanel();
-
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
-    expect(await screen.findByText("Owner Person")).toBeInTheDocument();
   });
 
   it("does not show the schedule fields when the unit has no resident", async () => {
     renderPanel();
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
+    await userEvent.click(unitButton("101"));
 
     expect(await screen.findByText(/sem morador cadastrado/i)).toBeInTheDocument();
     expect(screen.queryByLabelText("Data do evento")).not.toBeInTheDocument();
   });
 
-  it("disables Agendar until both date and time are filled in", async () => {
-    occupancyData = { owners: [], tenants: [{ id: "t1", name: "Tenant Person", phones: [] }] };
+  it("does not show the schedule fields when the unit only has an owner, no resident", async () => {
+    occupancyData = { owner: { id: "o1", name: "Owner Person", phones: [] }, residents: [] };
+    renderPanel();
+    await userEvent.click(unitButton("101"));
+
+    expect(await screen.findByText(/sem morador cadastrado/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText("Data do evento")).not.toBeInTheDocument();
+  });
+
+  it("disables Agendar until a resident, date and time are filled in", async () => {
+    occupancyData = { owner: null, residents: [{ id: "t1", name: "Resident Person", isOwner: false, phones: [] }] };
     renderPanel();
 
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
+    await userEvent.click(unitButton("101"));
     expect(await screen.findByRole("button", { name: "Agendar" })).toBeDisabled();
 
     await userEvent.type(screen.getByLabelText("Data do evento"), "2026-09-10");
     await userEvent.type(screen.getByLabelText("Hora do evento"), "20:00");
+    expect(screen.getByRole("button", { name: "Agendar" })).toBeDisabled();
 
+    await userEvent.selectOptions(screen.getByLabelText("Morador"), "t1");
     expect(screen.getByRole("button", { name: "Agendar" })).toBeEnabled();
   });
 
   it("blocks scheduling a date/time in the past", async () => {
-    occupancyData = { owners: [], tenants: [{ id: "t1", name: "Tenant Person", phones: [] }] };
+    occupancyData = { owner: null, residents: [{ id: "t1", name: "Resident Person", isOwner: false, phones: [] }] };
     renderPanel();
 
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
+    await userEvent.click(unitButton("101"));
     const dateInput = await screen.findByLabelText("Data do evento");
     expect(dateInput).toHaveAttribute("min");
 
@@ -148,32 +159,33 @@ describe("SchedulingRoomPanel", () => {
   });
 
   it("does not show the past-time warning before both fields are filled in", async () => {
-    occupancyData = { owners: [], tenants: [{ id: "t1", name: "Tenant Person", phones: [] }] };
+    occupancyData = { owner: null, residents: [{ id: "t1", name: "Resident Person", isOwner: false, phones: [] }] };
     renderPanel();
 
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
+    await userEvent.click(unitButton("101"));
     await screen.findByLabelText("Data do evento");
 
     expect(screen.queryByText(/o horário selecionado já passou/i)).not.toBeInTheDocument();
   });
 
   it("clears the selection when Cancelar is clicked", async () => {
-    occupancyData = { owners: [], tenants: [{ id: "t1", name: "Tenant Person", phones: [] }] };
+    occupancyData = { owner: null, residents: [{ id: "t1", name: "Resident Person", isOwner: false, phones: [] }] };
     renderPanel();
 
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
-    expect(await screen.findByText("Tenant Person")).toBeInTheDocument();
+    await userEvent.click(unitButton("101"));
+    expect(await screen.findByText("Resident Person")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
-    expect(screen.queryByText("Tenant Person")).not.toBeInTheDocument();
+    expect(screen.queryByText("Resident Person")).not.toBeInTheDocument();
   });
 
   it("schedules an event after confirming the modal", async () => {
-    occupancyData = { owners: [], tenants: [{ id: "t1", name: "Tenant Person", phones: [] }] };
+    occupancyData = { owner: null, residents: [{ id: "t1", name: "Resident Person", isOwner: false, phones: [] }] };
     renderPanel();
 
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
-    await userEvent.type(await screen.findByLabelText("Data do evento"), "2026-09-10");
+    await userEvent.click(unitButton("101"));
+    await userEvent.selectOptions(await screen.findByLabelText("Morador"), "t1");
+    await userEvent.type(screen.getByLabelText("Data do evento"), "2026-09-10");
     await userEvent.type(screen.getByLabelText("Hora do evento"), "20:00");
     await userEvent.click(screen.getByRole("button", { name: "Agendar" }));
     await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));
@@ -182,6 +194,7 @@ describe("SchedulingRoomPanel", () => {
       expect(mutateAsyncCreate).toHaveBeenCalledWith({
         room: "PARTY_HALL",
         unit: "101",
+        residentId: "t1",
         eventAt: new Date("2026-09-10T20:00").toISOString(),
         allowMultipleSameDay: false,
         notes: undefined,
@@ -190,11 +203,12 @@ describe("SchedulingRoomPanel", () => {
   });
 
   it("includes the note when the Observação checkbox is checked", async () => {
-    occupancyData = { owners: [], tenants: [{ id: "t1", name: "Tenant Person", phones: [] }] };
+    occupancyData = { owner: null, residents: [{ id: "t1", name: "Resident Person", isOwner: false, phones: [] }] };
     renderPanel();
 
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
-    await userEvent.type(await screen.findByLabelText("Data do evento"), "2026-09-10");
+    await userEvent.click(unitButton("101"));
+    await userEvent.selectOptions(await screen.findByLabelText("Morador"), "t1");
+    await userEvent.type(screen.getByLabelText("Data do evento"), "2026-09-10");
     await userEvent.type(screen.getByLabelText("Hora do evento"), "20:00");
     await userEvent.click(screen.getByRole("checkbox", { name: "Mais de um evento no mesmo dia" }));
     await userEvent.click(screen.getByRole("checkbox", { name: "Observação" }));
@@ -210,12 +224,13 @@ describe("SchedulingRoomPanel", () => {
   });
 
   it("shows an error toast when scheduling fails", async () => {
-    occupancyData = { owners: [], tenants: [{ id: "t1", name: "Tenant Person", phones: [] }] };
+    occupancyData = { owner: null, residents: [{ id: "t1", name: "Resident Person", isOwner: false, phones: [] }] };
     mutateAsyncCreate.mockRejectedValueOnce(new Error("fail"));
     renderPanel();
 
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
-    await userEvent.type(await screen.findByLabelText("Data do evento"), "2026-09-10");
+    await userEvent.click(unitButton("101"));
+    await userEvent.selectOptions(await screen.findByLabelText("Morador"), "t1");
+    await userEvent.type(screen.getByLabelText("Data do evento"), "2026-09-10");
     await userEvent.type(screen.getByLabelText("Hora do evento"), "20:00");
     await userEvent.click(screen.getByRole("button", { name: "Agendar" }));
     await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));
@@ -224,7 +239,7 @@ describe("SchedulingRoomPanel", () => {
   });
 
   it("shows the server's specific message when scheduling hits a same-day conflict", async () => {
-    occupancyData = { owners: [], tenants: [{ id: "t1", name: "Tenant Person", phones: [] }] };
+    occupancyData = { owner: null, residents: [{ id: "t1", name: "Resident Person", isOwner: false, phones: [] }] };
     mutateAsyncCreate.mockRejectedValueOnce({
       isAxiosError: true,
       response: {
@@ -233,23 +248,14 @@ describe("SchedulingRoomPanel", () => {
     });
     renderPanel();
 
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
-    await userEvent.type(await screen.findByLabelText("Data do evento"), "2026-09-10");
+    await userEvent.click(unitButton("101"));
+    await userEvent.selectOptions(await screen.findByLabelText("Morador"), "t1");
+    await userEvent.type(screen.getByLabelText("Data do evento"), "2026-09-10");
     await userEvent.type(screen.getByLabelText("Hora do evento"), "20:00");
     await userEvent.click(screen.getByRole("button", { name: "Agendar" }));
     await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));
 
     expect(await screen.findByText(/já existe um evento agendado nesse dia/i)).toBeInTheDocument();
-  });
-
-  it("picks a unit through the mobile floor-first selector", async () => {
-    occupancyData = { owners: [], tenants: [{ id: "t1", name: "Tenant Person", phones: [] }] };
-    renderPanel();
-
-    await userEvent.selectOptions(screen.getByLabelText("Andar"), "2");
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[1], "201");
-
-    expect(await screen.findByText("Tenant Person")).toBeInTheDocument();
   });
 
   it("lists the event's date, time, unit and requester", () => {
@@ -262,9 +268,13 @@ describe("SchedulingRoomPanel", () => {
     };
     renderPanel();
 
-    expect(screen.getAllByText("Tenant Person")).toHaveLength(2);
-    expect(screen.getByRole("cell", { name: "101" })).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "202" })).toBeInTheDocument();
+    // The apartment picker grid also has "101"/"202" cells, so scope to the
+    // entries table (the last <table> on the page) to avoid ambiguity.
+    const tables = screen.getAllByRole("table");
+    const entriesTable = within(tables[tables.length - 1]);
+    expect(screen.getAllByText("Resident Person")).toHaveLength(2);
+    expect(entriesTable.getByRole("cell", { name: "101" })).toBeInTheDocument();
+    expect(entriesTable.getByRole("cell", { name: "202" })).toBeInTheDocument();
   });
 
   it("shows Sim or Não for the multiple-events column based on allowMultipleSameDay", () => {
@@ -291,7 +301,7 @@ describe("SchedulingRoomPanel", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Editar" }));
 
-    expect(screen.getByText("Tenant Person (apto 101)")).toBeInTheDocument();
+    expect(screen.getByText("Resident Person (apto 101)")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Alterar" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Apartamento")).not.toBeInTheDocument();
   });
@@ -351,7 +361,7 @@ describe("SchedulingRoomPanel", () => {
     await userEvent.click(screen.getByRole("button", { name: "Editar" }));
     await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
 
-    expect(screen.getAllByLabelText("Apartamento")[0]).toBeInTheDocument();
+    expect(unitButton("101")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Alterar" })).not.toBeInTheDocument();
   });
 
@@ -449,14 +459,14 @@ describe("SchedulingRoomPanel", () => {
     };
     renderPanel();
 
-    expect(screen.getByText("Tenant Person").closest("tr")).not.toHaveAttribute("class");
+    expect(screen.getByText("Resident Person").closest("tr")).not.toHaveAttribute("class");
   });
 
   it("flags a still-pending event as overdue once its date has passed", () => {
     entriesData = { items: [entry({ eventAt: PAST_ISO })], total: 1, page: 1, pageSize: 20, capacityPercent: 90 };
     renderPanel();
 
-    expect(screen.getByText("Tenant Person").closest("tr")).toHaveAttribute("class");
+    expect(screen.getByText("Resident Person").closest("tr")).toHaveAttribute("class");
   });
 
   it("shows the empty state with no events scheduled", () => {

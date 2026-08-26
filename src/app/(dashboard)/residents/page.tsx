@@ -1,5 +1,5 @@
-import { ResidentsPage } from "@/modules/residents/components/residents-page";
+import { PeoplePage } from "@/modules/people/components/people-page";
 
 export default function Page() {
-  return <ResidentsPage />;
+  return <PeoplePage />;
 }

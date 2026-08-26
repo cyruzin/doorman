@@ -26,7 +26,7 @@ describe("buildSchedulingReportPdf", () => {
         {
           eventAt: new Date("2026-08-10T20:00:00.000Z"),
           unit: "101",
-          requesterName: "Tenant Person",
+          requesterName: "Resident Person",
           finishedAt: new Date("2026-08-10T23:00:00.000Z"),
           finishedByUsername: "jonas",
           cancelledAt: null,

@@ -1,14 +1,15 @@
 import type { SchedulingEntry, SchedulingRoom } from "@/modules/scheduling/types";
 
-export type ReportRoom = Extract<SchedulingRoom, "PARTY_HALL" | "CINEMA">;
+export type ReportRoom = Extract<SchedulingRoom, "PARTY_HALL" | "CINEMA" | "GRILL">;
 export type ReportEntry = SchedulingEntry;
 
-// Only the paid rooms get a control report.
-export const REPORT_ROOMS: ReportRoom[] = ["PARTY_HALL", "CINEMA"];
+// Every schedulable room gets a control report.
+export const REPORT_ROOMS: ReportRoom[] = ["PARTY_HALL", "CINEMA", "GRILL"];
 
 export const ROOM_LABELS: Record<ReportRoom, string> = {
   PARTY_HALL: "Salão de festas",
   CINEMA: "Cinema",
+  GRILL: "Grill",
 };
 
 // Three independent checkboxes — the doorman can check none, one, several,

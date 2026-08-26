@@ -38,8 +38,17 @@ describe("GET /api/reports", () => {
   it("rejects a missing or invalid room", async () => {
     requirePermission.mockResolvedValue({ session: {}, error: null });
 
-    const res = await GET(new NextRequest("http://localhost/api/reports?room=GRILL"));
+    const res = await GET(new NextRequest("http://localhost/api/reports?room=SAUNA"));
     expect(res.status).toBe(400);
+  });
+
+  it("accepts the grill room", async () => {
+    requirePermission.mockResolvedValue({ session: {}, error: null });
+    findMany.mockResolvedValue([]);
+    count.mockResolvedValue(0);
+
+    const res = await GET(new NextRequest("http://localhost/api/reports?room=GRILL"));
+    expect(res.status).toBe(200);
   });
 
   it("rejects a start date after the end date", async () => {

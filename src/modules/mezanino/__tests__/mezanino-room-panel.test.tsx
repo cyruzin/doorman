@@ -11,7 +11,7 @@ const mutateAsyncExit = vi.fn().mockResolvedValue({});
 const mutateAsyncDelete = vi.fn().mockResolvedValue({});
 
 let entriesData: MezaninoListResult | undefined = { items: [], total: 0, page: 1, pageSize: 20, occupied: false };
-let occupancyData: UnitOccupancy = { owners: [], tenants: [] };
+let occupancyData: UnitOccupancy = { owner: null, residents: [] };
 let isLoading = false;
 let role: "ADMIN" | "DOORMAN" = "ADMIN";
 
@@ -37,11 +37,18 @@ function entry(overrides: Partial<MezaninoEntry> = {}): MezaninoEntry {
     id: "e1",
     room: "GAME_ROOM",
     unit: "101",
-    residentName: "Tenant Person",
+    residentName: "Resident Person",
     entryAt: new Date().toISOString(),
     exitAt: null,
     ...overrides,
   };
+}
+
+// The grid renders both a desktop table and a mobile floor-first picker at
+// once (CSS hides one via a media query JSDOM doesn't evaluate) — the first
+// match is always the desktop button.
+function unitButton(unit: string) {
+  return screen.getAllByRole("button", { name: unit })[0];
 }
 
 function renderPanel() {
@@ -60,7 +67,7 @@ describe("MezaninoRoomPanel", () => {
     mutateAsyncExit.mockClear();
     mutateAsyncDelete.mockClear();
     entriesData = { items: [], total: 0, page: 1, pageSize: 20, occupied: false };
-    occupancyData = { owners: [], tenants: [] };
+    occupancyData = { owner: null, residents: [] };
     isLoading = false;
     role = "ADMIN";
   });
@@ -71,49 +78,63 @@ describe("MezaninoRoomPanel", () => {
     expect(screen.getByText("Em uso")).toBeInTheDocument();
   });
 
-  it("prioritizes the tenant name over the owner once a unit is picked", async () => {
+  it("only lists actual residents in the resident select, never the owner", async () => {
     occupancyData = {
-      owners: [{ id: "o1", name: "Owner Person", phones: [] }],
-      tenants: [{ id: "t1", name: "Tenant Person", phones: [] }],
+      owner: { id: "o1", name: "Owner Person", phones: [] },
+      residents: [{ id: "t1", name: "Resident Person", isOwner: false, phones: [] }],
     };
     renderPanel();
 
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
+    await userEvent.click(unitButton("101"));
 
-    expect(await screen.findByText("Tenant Person")).toBeInTheDocument();
+    expect(await screen.findByText("Resident Person")).toBeInTheDocument();
+    expect(screen.queryByText("Owner Person")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /confirmar entrada/i })).toBeDisabled();
+
+    await userEvent.selectOptions(screen.getByLabelText("Morador"), "t1");
     expect(screen.getByRole("button", { name: /confirmar entrada/i })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
   });
 
   it("clears the selection when Cancelar is clicked", async () => {
-    occupancyData = { owners: [], tenants: [{ id: "t1", name: "Tenant Person", phones: [] }] };
+    occupancyData = { owner: null, residents: [{ id: "t1", name: "Resident Person", isOwner: false, phones: [] }] };
     renderPanel();
 
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
-    expect(await screen.findByText("Tenant Person")).toBeInTheDocument();
+    await userEvent.click(unitButton("101"));
+    expect(await screen.findByText("Resident Person")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
-    expect(screen.queryByText("Tenant Person")).not.toBeInTheDocument();
+    expect(screen.queryByText("Resident Person")).not.toBeInTheDocument();
   });
 
   it("disables confirming entry when the unit has no resident", async () => {
     renderPanel();
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
+    await userEvent.click(unitButton("101"));
 
     expect(await screen.findByText(/sem morador cadastrado/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /confirmar entrada/i })).toBeDisabled();
   });
 
-  it("registers an entry after confirming the modal", async () => {
-    occupancyData = { owners: [], tenants: [{ id: "t1", name: "Tenant Person", phones: [] }] };
+  it("disables confirming entry when the unit only has an owner, no resident", async () => {
+    occupancyData = { owner: { id: "o1", name: "Owner Person", phones: [] }, residents: [] };
+    renderPanel();
+    await userEvent.click(unitButton("101"));
+
+    expect(await screen.findByText(/sem morador cadastrado/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /confirmar entrada/i })).toBeDisabled();
+  });
+
+  it("registers an entry after picking a resident and confirming the modal", async () => {
+    occupancyData = { owner: null, residents: [{ id: "t1", name: "Resident Person", isOwner: false, phones: [] }] };
     renderPanel();
 
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
+    await userEvent.click(unitButton("101"));
+    await userEvent.selectOptions(screen.getByLabelText("Morador"), "t1");
     await userEvent.click(screen.getByRole("button", { name: /confirmar entrada/i }));
     await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));
 
     await waitFor(() => {
-      expect(mutateAsyncCreate).toHaveBeenCalledWith({ room: "GAME_ROOM", unit: "101" });
+      expect(mutateAsyncCreate).toHaveBeenCalledWith({ room: "GAME_ROOM", unit: "101", residentId: "t1" });
     });
   });
 
@@ -179,31 +200,13 @@ describe("MezaninoRoomPanel", () => {
     expect(screen.getByText("Carregando...")).toBeInTheDocument();
   });
 
-  it("falls back to the owner name when there is no active tenant", async () => {
-    occupancyData = { owners: [{ id: "o1", name: "Owner Person", phones: [] }], tenants: [] };
-    renderPanel();
-
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
-
-    expect(await screen.findByText("Owner Person")).toBeInTheDocument();
-  });
-
-  it("picks a unit through the mobile floor-first selector", async () => {
-    occupancyData = { owners: [], tenants: [{ id: "t1", name: "Tenant Person", phones: [] }] };
-    renderPanel();
-
-    await userEvent.selectOptions(screen.getByLabelText("Andar"), "2");
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[1], "201");
-
-    expect(await screen.findByText("Tenant Person")).toBeInTheDocument();
-  });
-
   it("shows an error toast when registering an entry fails", async () => {
-    occupancyData = { owners: [], tenants: [{ id: "t1", name: "Tenant Person", phones: [] }] };
+    occupancyData = { owner: null, residents: [{ id: "t1", name: "Resident Person", isOwner: false, phones: [] }] };
     mutateAsyncCreate.mockRejectedValueOnce(new Error("fail"));
     renderPanel();
 
-    await userEvent.selectOptions(screen.getAllByLabelText("Apartamento")[0], "101");
+    await userEvent.click(unitButton("101"));
+    await userEvent.selectOptions(screen.getByLabelText("Morador"), "t1");
     await userEvent.click(screen.getByRole("button", { name: /confirmar entrada/i }));
     await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));
 

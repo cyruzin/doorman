@@ -22,6 +22,7 @@ export interface MezaninoEntry {
 export interface MezaninoEntryInput {
   room: MezaninoRoom;
   unit: string;
+  residentId: string;
 }
 
 export interface MezaninoListParams {

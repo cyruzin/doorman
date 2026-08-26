@@ -12,7 +12,7 @@ export function ApartmentsPage() {
   const role = session?.user?.role;
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
 
-  const canView = !!role && (can(role, "tenants", "read") || can(role, "owners", "read"));
+  const canView = !!role && (can(role, "residents", "read") || can(role, "owners", "read"));
 
   if (!canView) {
     return (

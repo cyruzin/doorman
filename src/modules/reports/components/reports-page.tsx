@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { can } from "@/lib/permissions";
-import { CinemaIcon, PartyHallIcon } from "@/modules/scheduling/components/room-icons";
+import { CinemaIcon, GrillIcon, PartyHallIcon } from "@/modules/scheduling/components/room-icons";
 import { REPORT_ROOMS, ROOM_LABELS, type ReportRoom } from "../types";
 import { ReportsRoomPanel } from "./reports-room-panel";
 import styles from "./reports-page.module.css";
@@ -11,6 +11,7 @@ import styles from "./reports-page.module.css";
 const ROOM_ICONS: Record<ReportRoom, typeof PartyHallIcon> = {
   PARTY_HALL: PartyHallIcon,
   CINEMA: CinemaIcon,
+  GRILL: GrillIcon,
 };
 
 export function ReportsPage() {

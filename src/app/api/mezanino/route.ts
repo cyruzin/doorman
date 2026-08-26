@@ -52,18 +52,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { room, unit } = parsed.data;
+  const { room, unit, residentId } = parsed.data;
 
-  // Same priority as the unit-occupancy screen: whoever lives there now wins,
-  // tenant over owner.
-  const [tenant, owner] = await Promise.all([
-    prisma.tenant.findFirst({ where: { unit, active: true }, select: { name: true }, orderBy: { name: "asc" } }),
-    prisma.owner.findFirst({ where: { unit, active: true }, select: { name: true }, orderBy: { name: "asc" } }),
-  ]);
-  const residentName = tenant?.name ?? owner?.name;
-  if (!residentName) {
-    return NextResponse.json({ error: "Apartamento sem morador cadastrado" }, { status: 400 });
+  // The resident is picked client-side from the unit's current occupants —
+  // re-verify it's still a real, active resident of this unit rather than
+  // trusting the submitted id blindly.
+  const resident = await prisma.resident.findFirst({ where: { id: residentId, unit, active: true }, select: { name: true } });
+  if (!resident) {
+    return NextResponse.json({ error: "Morador inválido para esse apartamento" }, { status: 400 });
   }
+  const residentName = resident.name;
 
   const entry = await prisma.mezaninoEntry.create({ data: { room, unit, residentName } });
   return NextResponse.json(entry, { status: 201 });

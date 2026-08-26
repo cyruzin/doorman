@@ -8,16 +8,18 @@ import { SCHEDULING_ROOMS } from "@/modules/scheduling/types";
 import type { SchedulingRoom } from "@/generated/prisma/enums";
 
 async function loadOccupancy() {
-  const [owners, tenants] = await Promise.all([
-    prisma.owner.findMany({ where: { active: true }, select: { unit: true } }),
-    prisma.tenant.findMany({ where: { active: true }, select: { unit: true } }),
+  const [ownerUnits, residents] = await Promise.all([
+    prisma.ownerUnit.findMany({ where: { owner: { active: true } }, select: { unit: true } }),
+    prisma.resident.findMany({ where: { active: true }, select: { unit: true } }),
   ]);
-  const occupiedUnits = new Set([...owners, ...tenants].map((r) => r.unit)).size;
+  const occupiedUnits = new Set([...ownerUnits, ...residents].map((r) => r.unit)).size;
 
   return {
     totalUnits: getAllUnits().length,
     occupiedUnits,
-    totalResidents: owners.length + tenants.length,
+    // Ownership alone doesn't make someone a "morador" — only actual
+    // residents count, matching the new owner/resident split.
+    totalResidents: residents.length,
   };
 }
 
@@ -51,9 +53,9 @@ function loadPinnedNotices() {
 }
 
 export async function GET() {
-  // Every role that can reach the dashboard already has at least tenant read
-  // access — used as the baseline auth gate for the whole summary.
-  const { session, error } = await requirePermission("tenants", "read");
+  // Every role that can reach the dashboard already has at least resident
+  // read access — used as the baseline auth gate for the whole summary.
+  const { session, error } = await requirePermission("residents", "read");
   if (error) return error;
 
   const [occupancy, scheduling, notices] = await Promise.all([

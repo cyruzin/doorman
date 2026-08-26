@@ -24,22 +24,6 @@
   padding: var(--space-4) var(--space-5);
 }
 
-.mobileOnly {
-  display: none;
-}
-
-@media (max-width: 640px) {
-  .desktopOnly {
-    display: none;
-  }
-
-  .mobileOnly {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-  }
-}
-
 .selectionRow {
   display: flex;
   justify-content: space-between;

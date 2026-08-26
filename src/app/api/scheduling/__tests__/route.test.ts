@@ -9,8 +9,7 @@ vi.mock("@/lib/api-guard", () => ({
 const findMany = vi.fn();
 const count = vi.fn();
 const create = vi.fn();
-const tenantFindFirst = vi.fn();
-const ownerFindFirst = vi.fn();
+const residentFindFirst = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -19,8 +18,7 @@ vi.mock("@/lib/prisma", () => ({
       count: (...args: unknown[]) => count(...args),
       create: (...args: unknown[]) => create(...args),
     },
-    tenant: { findFirst: (...args: unknown[]) => tenantFindFirst(...args) },
-    owner: { findFirst: (...args: unknown[]) => ownerFindFirst(...args) },
+    resident: { findFirst: (...args: unknown[]) => residentFindFirst(...args) },
   },
 }));
 
@@ -107,8 +105,7 @@ describe("GET /api/scheduling", () => {
 describe("POST /api/scheduling", () => {
   beforeEach(() => {
     requirePermission.mockReset();
-    tenantFindFirst.mockReset();
-    ownerFindFirst.mockReset();
+    residentFindFirst.mockReset();
     create.mockReset();
     count.mockReset();
   });
@@ -121,7 +118,13 @@ describe("POST /api/scheduling", () => {
     });
   }
 
-  const validBody = { room: "CINEMA", unit: "101", eventAt: "2026-09-10T20:00:00.000Z", allowMultipleSameDay: false };
+  const validBody = {
+    room: "CINEMA",
+    unit: "101",
+    residentId: "t1",
+    eventAt: "2026-09-10T20:00:00.000Z",
+    allowMultipleSameDay: false,
+  };
 
   it("rejects an unauthorized request", async () => {
     const denied = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -146,10 +149,9 @@ describe("POST /api/scheduling", () => {
     expect(create).not.toHaveBeenCalled();
   });
 
-  it("rejects a unit with no active resident", async () => {
+  it("rejects a residentId that isn't an active resident of the unit", async () => {
     requirePermission.mockResolvedValue({ session: {}, error: null });
-    tenantFindFirst.mockResolvedValue(null);
-    ownerFindFirst.mockResolvedValue(null);
+    residentFindFirst.mockResolvedValue(null);
 
     const res = await POST(postRequest(validBody));
     expect(res.status).toBe(400);
@@ -158,8 +160,7 @@ describe("POST /api/scheduling", () => {
 
   it("rejects a conflicting same-day booking when allowMultipleSameDay is false", async () => {
     requirePermission.mockResolvedValue({ session: {}, error: null });
-    tenantFindFirst.mockResolvedValue({ name: "Tenant Person" });
-    ownerFindFirst.mockResolvedValue(null);
+    residentFindFirst.mockResolvedValue({ name: "Resident Person" });
     count.mockResolvedValue(1);
 
     const res = await POST(postRequest(validBody));
@@ -172,8 +173,7 @@ describe("POST /api/scheduling", () => {
 
   it("only counts non-cancelled entries for the same-day conflict check", async () => {
     requirePermission.mockResolvedValue({ session: {}, error: null });
-    tenantFindFirst.mockResolvedValue({ name: "Tenant Person" });
-    ownerFindFirst.mockResolvedValue(null);
+    residentFindFirst.mockResolvedValue({ name: "Resident Person" });
     count.mockResolvedValue(0);
     create.mockResolvedValue({ id: "e1" });
 
@@ -184,8 +184,7 @@ describe("POST /api/scheduling", () => {
 
   it("allows a conflicting same-day booking when allowMultipleSameDay is true", async () => {
     requirePermission.mockResolvedValue({ session: {}, error: null });
-    tenantFindFirst.mockResolvedValue({ name: "Tenant Person" });
-    ownerFindFirst.mockResolvedValue(null);
+    residentFindFirst.mockResolvedValue({ name: "Resident Person" });
     count.mockResolvedValue(1);
     create.mockResolvedValue({ id: "e1" });
 
@@ -194,21 +193,24 @@ describe("POST /api/scheduling", () => {
     expect(create).toHaveBeenCalled();
   });
 
-  it("prefers the tenant name over the owner when both exist", async () => {
+  it("creates the entry with the resident matched by residentId", async () => {
     requirePermission.mockResolvedValue({ session: {}, error: null });
-    tenantFindFirst.mockResolvedValue({ name: "Tenant Person" });
-    ownerFindFirst.mockResolvedValue({ name: "Owner Person" });
+    residentFindFirst.mockResolvedValue({ name: "Resident Person" });
     count.mockResolvedValue(0);
-    create.mockResolvedValue({ id: "e1", room: "CINEMA", unit: "101", requesterName: "Tenant Person" });
+    create.mockResolvedValue({ id: "e1", room: "CINEMA", unit: "101", requesterName: "Resident Person" });
 
     const res = await POST(postRequest(validBody));
 
     expect(res.status).toBe(201);
+    expect(residentFindFirst).toHaveBeenCalledWith({
+      where: { id: "t1", unit: "101", active: true },
+      select: { name: true },
+    });
     expect(create).toHaveBeenCalledWith({
       data: {
         room: "CINEMA",
         unit: "101",
-        requesterName: "Tenant Person",
+        requesterName: "Resident Person",
         eventAt: new Date(validBody.eventAt),
         allowMultipleSameDay: false,
         notes: null,
@@ -216,25 +218,9 @@ describe("POST /api/scheduling", () => {
     });
   });
 
-  it("falls back to the owner name when there is no active tenant", async () => {
-    requirePermission.mockResolvedValue({ session: {}, error: null });
-    tenantFindFirst.mockResolvedValue(null);
-    ownerFindFirst.mockResolvedValue({ name: "Owner Person" });
-    count.mockResolvedValue(0);
-    create.mockResolvedValue({ id: "e1", room: "CINEMA", unit: "101", requesterName: "Owner Person" });
-
-    const res = await POST(postRequest(validBody));
-
-    expect(res.status).toBe(201);
-    expect(create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ requesterName: "Owner Person" }),
-    });
-  });
-
   it("stores the notes when provided", async () => {
     requirePermission.mockResolvedValue({ session: {}, error: null });
-    tenantFindFirst.mockResolvedValue({ name: "Tenant Person" });
-    ownerFindFirst.mockResolvedValue(null);
+    residentFindFirst.mockResolvedValue({ name: "Resident Person" });
     count.mockResolvedValue(0);
     create.mockResolvedValue({ id: "e1" });
 

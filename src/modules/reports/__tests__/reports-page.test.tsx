@@ -31,12 +31,12 @@ describe("ReportsPage", () => {
     expect(screen.getByTestId("panel")).toHaveTextContent("CINEMA");
   });
 
-  it("only shows the two paid rooms", () => {
+  it("shows all three schedulable rooms, including grill", () => {
     sessionRole = "ADMIN";
     render(<ReportsPage />);
 
     expect(screen.getByRole("button", { name: /salão de festas/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /cinema/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /grill/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /grill/i })).toBeInTheDocument();
   });
 });

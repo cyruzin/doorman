@@ -3,11 +3,11 @@
 import { useState } from "react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
-import { getAllUnits, getFloors, getUnitNumber, getUnitsPerFloor } from "@/lib/building";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { Pagination } from "@/components/pagination/pagination";
 import { useUnitOccupancy } from "@/modules/apartments/hooks/use-unit-occupancy";
+import { ApartmentGrid } from "@/modules/apartments/components/apartment-grid";
 import {
   useCreateSchedulingEntry,
   useDeleteSchedulingEntry,
@@ -57,8 +57,8 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
   const requestConfirm = useConfirm();
 
   const [page, setPage] = useState(1);
-  const [floor, setFloor] = useState(1);
   const [unit, setUnit] = useState("");
+  const [residentId, setResidentId] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [eventTime, setEventTime] = useState("");
   const [allowMultipleSameDay, setAllowMultipleSameDay] = useState(false);
@@ -73,18 +73,10 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
   const finishEntry = useFinishSchedulingEntry();
   const deleteEntry = useDeleteSchedulingEntry();
 
-  const floors = getFloors();
-  const allUnits = getAllUnits();
-  const floorUnits = Array.from({ length: getUnitsPerFloor(floor) }, (_, i) => getUnitNumber(floor, i + 1));
-
-  const residentName = !occupancy
-    ? ""
-    : occupancy.tenants.length > 0
-      ? occupancy.tenants.map((t) => t.name).join(", ")
-      : occupancy.owners.length > 0
-        ? occupancy.owners.map((o) => o.name).join(", ")
-        : "Apartamento sem morador cadastrado";
-  const hasResident = !!occupancy && (occupancy.tenants.length > 0 || occupancy.owners.length > 0);
+  // Only actual residents can book a room — owning the unit doesn't mean
+  // living in it.
+  const residents = occupancy?.residents ?? [];
+  const selectedResident = residents.find((r) => r.id === residentId) ?? null;
 
   const resetForm = () => {
     setEventDate("");
@@ -96,7 +88,13 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
 
   const clearSelection = () => {
     setUnit("");
+    setResidentId("");
     resetForm();
+  };
+
+  const selectUnit = (value: string) => {
+    setUnit(value);
+    setResidentId("");
   };
 
   const cancelEdit = () => {
@@ -107,6 +105,7 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
   const startEdit = (entry: SchedulingEntry) => {
     const eventAt = new Date(entry.eventAt);
     setUnit("");
+    setResidentId("");
     setEditingEntry(entry);
     setEventDate(eventAt.toISOString().slice(0, 10));
     setEventTime(eventAt.toTimeString().slice(0, 5));
@@ -116,12 +115,14 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
   };
 
   const handleSchedule = () => {
+    if (!selectedResident) return;
     requestConfirm(
       async () => {
         try {
           await createEntry.mutateAsync({
             room,
             unit,
+            residentId,
             eventAt: toIsoDateTime(eventDate, eventTime),
             allowMultipleSameDay,
             notes: hasNotes ? notes : undefined,
@@ -134,7 +135,7 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
       },
       {
         title: "Confirmar agendamento",
-        description: `Agendar ${ROOM_LABELS[room]} para ${residentName} (apto ${unit}) em ${eventDate.split("-").reverse().join("/")} às ${eventTime}?`,
+        description: `Agendar ${ROOM_LABELS[room]} para ${selectedResident.name} (apto ${unit}) em ${eventDate.split("-").reverse().join("/")} às ${eventTime}?`,
       },
     );
   };
@@ -212,7 +213,7 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
   const capacityPercent = data?.capacityPercent ?? 0;
   const currentMonthName = new Date(now).toLocaleDateString("pt-BR", { month: "long" });
   const isEditing = !!editingEntry;
-  const showFields = isEditing || (!!unit && hasResident);
+  const showFields = isEditing || (!!unit && residents.length > 0);
 
   return (
     <div className={styles.panel}>
@@ -222,61 +223,29 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
       </div>
 
       <div className={`card ${styles.entryForm}`}>
-        {!isEditing && (
-          <>
-            <select
-              className={`input ${styles.desktopOnly}`}
-              aria-label="Apartamento"
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-            >
-              <option value="">Selecione o apartamento</option>
-              {floors.map((f) => (
-                <optgroup key={f} label={`${f}º andar`}>
-                  {allUnits
-                    .filter((u) => u.floor === f)
-                    .map((u) => (
-                      <option key={u.unit} value={u.unit}>
-                        {u.unit}
-                      </option>
-                    ))}
-                </optgroup>
-              ))}
-            </select>
-
-            <div className={styles.mobileOnly}>
-              <select
-                className="input"
-                aria-label="Andar"
-                value={floor}
-                onChange={(e) => {
-                  setFloor(Number(e.target.value));
-                  setUnit("");
-                }}
-              >
-                {floors.map((f) => (
-                  <option key={f} value={f}>
-                    {f}º andar
-                  </option>
-                ))}
-              </select>
-              <select className="input" aria-label="Apartamento" value={unit} onChange={(e) => setUnit(e.target.value)}>
-                <option value="">Selecione o apartamento</option>
-                {floorUnits.map((u) => (
-                  <option key={u} value={u}>
-                    {u}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </>
-        )}
+        {!isEditing && <ApartmentGrid selectedUnit={unit || null} onSelect={selectUnit} />}
 
         {(isEditing || unit) && (
           <div className={styles.selectionRow}>
-            <span className={styles.residentName}>
-              {editingEntry ? `${editingEntry.requesterName} (apto ${editingEntry.unit})` : residentName}
-            </span>
+            {editingEntry ? (
+              <span className={styles.residentName}>{`${editingEntry.requesterName} (apto ${editingEntry.unit})`}</span>
+            ) : residents.length === 0 ? (
+              <span className={styles.residentName}>Apartamento sem morador cadastrado</span>
+            ) : (
+              <select
+                className="input"
+                aria-label="Morador"
+                value={residentId}
+                onChange={(e) => setResidentId(e.target.value)}
+              >
+                <option value="">Selecione o morador</option>
+                {residents.map((resident) => (
+                  <option key={resident.id} value={resident.id}>
+                    {resident.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         )}
 
@@ -353,7 +322,7 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
               <button
                 type="button"
                 className="btn btn-primary"
-                disabled={!hasDateAndTime || isPastSelection}
+                disabled={!hasDateAndTime || isPastSelection || (!isEditing && !selectedResident)}
                 onClick={isEditing ? handleUpdate : handleSchedule}
               >
                 {isEditing ? "Alterar" : "Agendar"}

@@ -34,19 +34,23 @@ model User {
   createdAt    DateTime @default(now())
 }
 
-model Tenant {
+// A person currently living in a unit — can be more than one per unit, and
+// can also be the unit's owner (isOwner). When isOwner is true, ownerId links
+// to the canonical Owner record instead of duplicating their name/cpf/email —
+// the API derives those three fields from the linked Owner on write.
+model Resident {
   id        String    @id @default(cuid())
   name      String
   cpf       String?
   email     String?
   unit      String
-  // Soft-deleted instead of removed, so old tenants stay searchable.
+  // Soft-deleted instead of removed, so old residents stay searchable.
   active    Boolean   @default(true)
-  phones    Phone[]
-  vehicles  Vehicle[]
-  // The unit's owner, when this tenant is renting from someone (locador).
+  isOwner   Boolean   @default(false)
   ownerId   String?
   owner     Owner?    @relation(fields: [ownerId], references: [id])
+  phones    Phone[]
+  vehicles  Vehicle[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -56,35 +60,55 @@ model Tenant {
 }
 
 model Owner {
-  id        String    @id @default(cuid())
+  id        String      @id @default(cuid())
   name      String
-  cpf       String?
+  // The dedup identifier — required going forward (enforced in the Zod
+  // schema, not here: a hard NOT NULL would break legacy rows without one).
+  // Unique constraint allows multiple NULLs (SQL semantics) but rejects a
+  // second owner with the same CPF.
+  cpf       String?     @unique
   email     String?
-  unit      String
-  active    Boolean   @default(true)
+  active    Boolean     @default(true)
   phones    Phone[]
   vehicles  Vehicle[]
-  // Tenants currently renting from this owner (locatários).
-  tenants   Tenant[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  units     OwnerUnit[]
+  // Residents who are also this owner (isOwner: true, linked via ownerId).
+  residents Resident[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
   @@index([name])
+}
+
+// One row per unit an owner holds — lets an owner have multiple apartments.
+// "One owner per unit" is enforced in the API (findClaimedUnits), scoped to
+// active owners, not as a hard unique constraint here — a deactivated
+// owner's old units must stay claimable by whoever takes over, the same way
+// every other soft-deleted record in this app keeps its history without
+// blocking new writes.
+model OwnerUnit {
+  id        String   @id @default(cuid())
+  ownerId   String
+  unit      String
+  owner     Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
   @@index([unit])
+  @@index([ownerId])
 }
 
 // A resident can have more than one phone — one row per number, linked to
-// whichever kind of resident it belongs to (exactly one of tenantId/ownerId is set).
+// whichever kind of resident it belongs to (exactly one of residentId/ownerId is set).
 model Phone {
-  id         String  @id @default(cuid())
+  id         String    @id @default(cuid())
   number     String
-  isWhatsapp Boolean @default(false)
-  tenantId   String?
-  tenant     Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  isWhatsapp Boolean   @default(false)
+  residentId String?
+  resident   Resident? @relation(fields: [residentId], references: [id], onDelete: Cascade)
   ownerId    String?
-  owner      Owner?  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner      Owner?    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  @@index([tenantId])
+  @@index([residentId])
   @@index([ownerId])
 }
 
@@ -145,14 +169,14 @@ model Notice {
 
 // A resident can have more than one vehicle — same shape as Phone.
 model Vehicle {
-  id       String  @id @default(cuid())
-  plate    String?
-  model    String?
-  tenantId String?
-  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  ownerId  String?
-  owner    Owner?  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  plate      String?
+  model      String?
+  residentId String?
+  resident   Resident? @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  ownerId    String?
+  owner      Owner?    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  @@index([tenantId])
+  @@index([residentId])
   @@index([ownerId])
 }

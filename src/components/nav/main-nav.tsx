@@ -22,10 +22,10 @@ import { NavClock } from "./nav-clock";
 const links = [
   { href: "/", label: "Início", Icon: HomeIcon },
   { href: "/notices", label: "Recados", resources: ["notices"] as Resource[], Icon: NoticesIcon },
-  { href: "/apartments", label: "Apartamentos", resources: ["tenants", "owners"] as Resource[], Icon: ApartmentsIcon },
+  { href: "/apartments", label: "Apartamentos", resources: ["residents", "owners"] as Resource[], Icon: ApartmentsIcon },
   { href: "/mezanino", label: "Mezanino", resources: ["mezanino"] as Resource[], Icon: MezaninoIcon },
   { href: "/scheduling", label: "Agendamentos", resources: ["scheduling"] as Resource[], Icon: SchedulingIcon },
-  { href: "/residents", label: "Moradores", resources: ["tenants", "owners"] as Resource[], Icon: ResidentsIcon },
+  { href: "/residents", label: "Moradores", resources: ["residents", "owners"] as Resource[], Icon: ResidentsIcon },
   { href: "/users", label: "Usuários", resources: ["users"] as Resource[], Icon: UsersIcon },
   { href: "/reports", label: "Relatórios", resources: ["reports"] as Resource[], Icon: ReportsIcon },
   { href: "/backups", label: "Backups", resources: ["backups"] as Resource[], Icon: BackupsIcon },
@@ -50,6 +50,7 @@ export function MainNav() {
         <Link href="/" className="main-nav-brand" onClick={closeMenu}>
           St. Tropez
         </Link>
+        <NavClock />
         <button
           type="button"
           className="icon-btn main-nav-hamburger"
@@ -77,7 +78,6 @@ export function MainNav() {
               </Link>
             ))}
         </nav>
-        <NavClock />
         <div className="main-nav-actions">
           <ThemeToggleButton />
 

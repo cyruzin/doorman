@@ -1,0 +1,23 @@
+.formCard {
+  padding: var(--space-5);
+}
+
+.filters {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.filters select {
+  max-width: 160px;
+}
+
+@media (max-width: 640px) {
+  .filters {
+    flex-direction: column;
+  }
+
+  .filters select {
+    max-width: none;
+  }
+}

@@ -2,12 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ownersApi } from "../api";
-import type { OwnerInput } from "../types";
-import type { PersonListParams } from "@/lib/person-client";
+import type { OwnerInput, OwnerListParams } from "../types";
 
 const queryKey = ["owners"];
 
-export function useOwners(params: PersonListParams & { enabled?: boolean } = {}) {
+export function useOwners(params: OwnerListParams & { enabled?: boolean } = {}) {
   const { enabled = true, ...listParams } = params;
   return useQuery({ queryKey: [...queryKey, listParams], queryFn: () => ownersApi.list(listParams), enabled });
 }

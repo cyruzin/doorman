@@ -442,6 +442,10 @@ select.input {
     display: inline-flex;
   }
 
+  .nav-clock {
+    display: none;
+  }
+
   .main-nav-panel {
     display: none;
     flex-direction: column;

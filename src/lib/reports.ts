@@ -1,14 +1,15 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { SchedulingRoom } from "@/generated/prisma/enums";
 
-// Only the paid rooms get a control report — the building needs a paper
+// Every schedulable room gets a control report — the building needs a paper
 // trail of what was used vs. cancelled for billing/reconciliation.
-export const REPORT_ROOMS = ["PARTY_HALL", "CINEMA"] as const;
+export const REPORT_ROOMS = ["PARTY_HALL", "CINEMA", "GRILL"] as const;
 export type ReportRoom = (typeof REPORT_ROOMS)[number];
 
 export const REPORT_ROOM_LABELS: Record<ReportRoom, string> = {
   PARTY_HALL: "Salão de festas",
   CINEMA: "Cinema",
+  GRILL: "Grill",
 };
 
 // Three independent checkboxes, not a single choice — the doorman can check

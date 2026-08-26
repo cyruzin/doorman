@@ -26,7 +26,7 @@ function entry(overrides: Partial<ReportEntry> = {}): ReportEntry {
     id: "e1",
     room: "PARTY_HALL",
     unit: "101",
-    requesterName: "Tenant Person",
+    requesterName: "Resident Person",
     eventAt: "2026-08-10T20:00:00.000Z",
     allowMultipleSameDay: false,
     notes: null,

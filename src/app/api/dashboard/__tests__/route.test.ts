@@ -6,14 +6,14 @@ vi.mock("@/lib/api-guard", () => ({
   requirePermission: (...args: unknown[]) => requirePermission(...args),
 }));
 
-const ownerFindMany = vi.fn();
-const tenantFindMany = vi.fn();
+const ownerUnitFindMany = vi.fn();
+const residentFindMany = vi.fn();
 const schedulingFindMany = vi.fn();
 const noticeFindMany = vi.fn();
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    owner: { findMany: (...args: unknown[]) => ownerFindMany(...args) },
-    tenant: { findMany: (...args: unknown[]) => tenantFindMany(...args) },
+    ownerUnit: { findMany: (...args: unknown[]) => ownerUnitFindMany(...args) },
+    resident: { findMany: (...args: unknown[]) => residentFindMany(...args) },
     schedulingEntry: { findMany: (...args: unknown[]) => schedulingFindMany(...args) },
     notice: { findMany: (...args: unknown[]) => noticeFindMany(...args) },
   },
@@ -29,8 +29,8 @@ import { GET } from "../route";
 describe("GET /api/dashboard", () => {
   beforeEach(() => {
     requirePermission.mockReset();
-    ownerFindMany.mockReset();
-    tenantFindMany.mockReset();
+    ownerUnitFindMany.mockReset();
+    residentFindMany.mockReset();
     schedulingFindMany.mockReset();
     noticeFindMany.mockReset();
     getCapacityPercent.mockReset();
@@ -46,23 +46,24 @@ describe("GET /api/dashboard", () => {
     expect(res.status).toBe(401);
   });
 
-  it("counts occupied units from active owners and tenants, without double-counting a unit that has both", async () => {
+  it("counts occupied units from active owners and residents, without double-counting a unit that has both", async () => {
     requirePermission.mockResolvedValue({ session: { user: { role: "ADMIN" } }, error: null });
-    ownerFindMany.mockResolvedValue([{ unit: "101" }]);
-    tenantFindMany.mockResolvedValue([{ unit: "101" }, { unit: "202" }]);
+    ownerUnitFindMany.mockResolvedValue([{ unit: "101" }]);
+    residentFindMany.mockResolvedValue([{ unit: "101" }, { unit: "202" }]);
     schedulingFindMany.mockResolvedValue([]);
 
     const res = await GET();
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(body.occupancy).toMatchObject({ totalUnits: 110, occupiedUnits: 2, totalResidents: 3 });
+    // Ownership alone doesn't make someone a "morador" — only actual residents count.
+    expect(body.occupancy).toMatchObject({ totalUnits: 110, occupiedUnits: 2, totalResidents: 2 });
   });
 
   it("includes scheduling capacity and upcoming events when the role can read scheduling", async () => {
     requirePermission.mockResolvedValue({ session: { user: { role: "ADMIN" } }, error: null });
-    ownerFindMany.mockResolvedValue([]);
-    tenantFindMany.mockResolvedValue([]);
+    ownerUnitFindMany.mockResolvedValue([]);
+    residentFindMany.mockResolvedValue([]);
     schedulingFindMany.mockResolvedValue([{ id: "e1" }]);
     getCapacityPercent.mockResolvedValue(42);
 
@@ -75,8 +76,8 @@ describe("GET /api/dashboard", () => {
 
   it("only fetches upcoming events that are neither finished nor cancelled", async () => {
     requirePermission.mockResolvedValue({ session: { user: { role: "ADMIN" } }, error: null });
-    ownerFindMany.mockResolvedValue([]);
-    tenantFindMany.mockResolvedValue([]);
+    ownerUnitFindMany.mockResolvedValue([]);
+    residentFindMany.mockResolvedValue([]);
     schedulingFindMany.mockResolvedValue([]);
 
     await GET();
@@ -91,8 +92,8 @@ describe("GET /api/dashboard", () => {
 
   it("returns only today's notices pinned to the home dashboard, up to 5", async () => {
     requirePermission.mockResolvedValue({ session: { user: { role: "ADMIN" } }, error: null });
-    ownerFindMany.mockResolvedValue([]);
-    tenantFindMany.mockResolvedValue([]);
+    ownerUnitFindMany.mockResolvedValue([]);
+    residentFindMany.mockResolvedValue([]);
     schedulingFindMany.mockResolvedValue([]);
     noticeFindMany.mockResolvedValue([{ id: "n1" }]);
 

@@ -27,6 +27,7 @@ export interface SchedulingEntry {
 export interface SchedulingEntryInput {
   room: SchedulingRoom;
   unit: string;
+  residentId: string;
   eventAt: string;
   allowMultipleSameDay: boolean;
   notes?: string;

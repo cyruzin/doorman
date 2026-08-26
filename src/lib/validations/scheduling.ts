@@ -7,6 +7,7 @@ const futureEventAt = z.coerce
 export const schedulingEntrySchema = z.object({
   room: z.enum(["PARTY_HALL", "CINEMA", "GRILL"]),
   unit: z.string().min(1, "Selecione um apartamento"),
+  residentId: z.string().min(1, "Selecione o morador"),
   eventAt: futureEventAt,
   allowMultipleSameDay: z.boolean(),
   notes: z.string().trim().min(1).optional(),

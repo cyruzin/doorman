@@ -1,0 +1,117 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.sectionTitle {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.unitsSummary {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.repeatingRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.repeatingRow :global(.form-field) {
+  flex: 1;
+  min-width: 160px;
+}
+
+@media (max-width: 640px) {
+  .repeatingRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .repeatingRow :global(.form-field) {
+    min-width: 0;
+  }
+
+  .repeatingRow .toggle {
+    margin-top: 0;
+  }
+
+  .repeatingRow > button {
+    width: 100%;
+  }
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  cursor: pointer;
+  width: fit-content;
+}
+
+.toggleInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toggleTrack {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--color-neutral-300);
+  transition: background-color 0.15s ease;
+}
+
+:root[data-theme="dark"] .toggleTrack {
+  background: var(--color-border-strong);
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-neutral-0);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease;
+}
+
+.toggleInput:checked + .toggleTrack {
+  background: var(--color-success);
+}
+
+.toggleInput:checked + .toggleTrack .toggleThumb {
+  transform: translateX(16px);
+}
+
+.toggleInput:focus-visible + .toggleTrack {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.toggleLabel {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}

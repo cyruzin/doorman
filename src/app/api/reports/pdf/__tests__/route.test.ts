@@ -40,8 +40,21 @@ describe("GET /api/reports/pdf", () => {
   it("rejects a missing or invalid room", async () => {
     requirePermission.mockResolvedValue({ session: {}, error: null });
 
-    const res = await GET(new NextRequest("http://localhost/api/reports/pdf?room=GRILL"));
+    const res = await GET(new NextRequest("http://localhost/api/reports/pdf?room=SAUNA"));
     expect(res.status).toBe(400);
+  });
+
+  it("accepts the grill room and names the file after it", async () => {
+    requirePermission.mockResolvedValue({ session: { user: { name: "jonas" } }, error: null });
+    findMany.mockResolvedValue([]);
+    buildSchedulingReportPdf.mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46]));
+
+    const res = await GET(
+      new NextRequest("http://localhost/api/reports/pdf?room=GRILL&startDate=2026-08-01&endDate=2026-08-10"),
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Disposition")).toMatch(/attachment; filename="relatorio-grill-.*\.pdf"/);
   });
 
   it("rejects an invalid date range", async () => {
