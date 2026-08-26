@@ -11,9 +11,7 @@ export function useNotices(params: NoticeListParams = {}) {
   return useQuery({ queryKey: [...queryKey, params], queryFn: () => noticesApi.list(params) });
 }
 
-// A notice with "Exibir no início" pinned appears on the home dashboard too —
-// its own query is cached separately, so a create/delete here has to
-// invalidate it as well or the dashboard shows stale data until reload.
+// A pinned notice also shows on the dashboard, cached under its own query key.
 export function useCreateNotice() {
   const queryClient = useQueryClient();
   return useMutation({

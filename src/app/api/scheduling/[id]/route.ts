@@ -46,8 +46,7 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
   if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (entry.cancelledAt) return NextResponse.json({ error: "Agendamento já cancelado" }, { status: 400 });
 
-  // Once an event has happened, only an admin can rewrite the history — a
-  // doorman may only undo an entry they just added by mistake.
+  // A doorman may only undo a not-yet-finished entry; admin can rewrite history.
   if (entry.finishedAt && session.user.role !== "ADMIN") {
     return NextResponse.json(
       { error: "Somente o administrador pode excluir um evento já finalizado" },
@@ -55,8 +54,7 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
     );
   }
 
-  // Soft cancel, not a hard delete — the paid rooms' control report needs
-  // cancelled bookings to still show up in history.
+  // Soft cancel — cancelled bookings still need to show up in the report.
   await prisma.schedulingEntry.update({
     where: { id },
     data: { cancelledAt: new Date(), cancelledByUsername: session.user.name },

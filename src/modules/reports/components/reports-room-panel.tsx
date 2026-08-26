@@ -32,8 +32,7 @@ function toDateInputValue(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-// Includes seconds so generating two reports back to back doesn't produce
-// the same filename.
+// Includes seconds so two reports generated back to back don't collide.
 function toFileTimestamp(date: Date): string {
   const time = [date.getHours(), date.getMinutes(), date.getSeconds()].map((n) => String(n).padStart(2, "0")).join("-");
   return `${toDateInputValue(date)}_${time}`;

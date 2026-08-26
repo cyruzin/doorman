@@ -1,8 +1,6 @@
 import type { NextRequest } from "next/server";
 
-// Hard ceiling for any single request — the residents/owners/users tables
-// always ask for 20 (per the product spec); a higher pageSize is only used
-// to populate pickers (e.g. the resident form's owner search).
+// Hard ceiling per request; higher pageSize is only used to populate pickers.
 export const MAX_PAGE_SIZE = 100;
 
 export interface PaginationParams {

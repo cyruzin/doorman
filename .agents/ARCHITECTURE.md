@@ -8,13 +8,16 @@ src/
     (dashboard)/    páginas autenticadas (layout com nav)
     api/            API routes (REST, consumidas via React Query + Axios)
     login/          página pública de login
-  modules/          um módulo por domínio: apartments, auth, backups,
-                    dashboard, owners, residents, tenants, users
+  modules/          um módulo por domínio: apartments, auth, backups, home,
+                    mezanino, notices, owners, people, permissions, reports,
+                    residents, scheduling, users
                     cada módulo: components/, hooks/, api.ts, types.ts, __tests__/
   components/       componentes compartilhados entre módulos (nav, toast,
-                    confirm, pagination, person)
-  lib/              utilitários compartilhados (auth, permissions, prisma,
-                    axios, query-client, building, backup, pagination...)
+                    confirm, pagination, search-input, providers)
+  lib/              utilitários compartilhados (auth, api-guard, permissions
+                    (tipos) + permissions-db (dados), prisma, axios,
+                    query-client, building, backup, pagination, reports,
+                    scheduling, resident-owner, contact-writes...)
   hooks/            hooks compartilhados
   styles/           tokens CSS (cores, espaçamento, tipografia)
   types/            tipos compartilhados
@@ -30,16 +33,27 @@ scripts/
 ## Autenticação e permissões
 
 - NextAuth v5 (Credentials provider), sessão JWT carregando `role` e `id`.
+  Login tem rate limit em memória por username (`src/lib/auth.ts`).
 - `src/proxy.ts` protege as páginas do dashboard, redirecionando para
   `/login` quando não autenticado. As rotas `/api/**` são **excluídas** do
   matcher de propósito — elas validam sessão e permissão sozinhas (via
   `src/lib/api-guard.ts`) e devem responder JSON 401/403, nunca um redirect
   HTML.
-- `src/lib/permissions.ts` define a matriz de permissões em código (`can(role,
-  resource, action)`), não em banco. Recursos: `tenants`, `owners`, `users`,
-  `backups`. `DOORMAN` não tem `delete`; `ADMIN` tem acesso total.
+- Permissões são **por role, editáveis em banco** (tabela `RolePermission`),
+  não mais uma matriz hardcoded. `src/lib/permissions.ts` só tem os tipos
+  (`Resource`, `Action`, `RESOURCES`, `ACTIONS`); `src/lib/permissions-db.ts`
+  tem `can()`/`getPermissionsMatrix()`/`setPermissionsMatrix()`, usados pelo
+  `api-guard.ts` e pela rota `/api/permissions`. Recursos: `residents`,
+  `owners`, `users`, `backups`, `mezanino`, `scheduling`, `reports`,
+  `notices`. Um admin edita a matriz pela tela **Usuários > Permissões**
+  (switches); o `PUT` bloqueia remover `users:read`/`users:update` do ADMIN
+  pra evitar lockout do próprio painel.
+- No client, `usePermissions()` (`src/modules/permissions/hooks/use-permissions.ts`)
+  busca a matriz via React Query e expõe `can(resource, action)` — é o que
+  toda página/nav usa hoje, não mais um `can(role, ...)` síncrono.
 - O usuário `isSuperAdmin` (criado por `scripts/seed-admin.ts`) não pode se
-  auto-deletar — proteção contra lockdown do sistema.
+  auto-deletar nem perder o papel de ADMIN — proteção contra lockdown do
+  sistema.
 
 ## Banco de dados
 
@@ -67,11 +81,14 @@ scripts/
   tipo de entrada esperado por `handleSubmit` precisa bater com o tipo de
   saída do schema, e `.transform()`/`.default()` cria divergência
   input≠output que quebra a tipagem. Se precisar normalizar um campo (ex.
-  `ownerId`), faça isso fora do schema (`src/lib/person-owner-link.ts`).
+  `ownerId`), faça isso fora do schema (`src/lib/resident-owner.ts`).
 - **CSS Modules + classes globais**: classes string simples como `"card"`,
   `"btn"`, `"form-field"` (definidas em `globals.css`) só são reconhecidas
   dentro de um `.module.css` via `:global(.form-field)` — sem isso o nome
   vira um hash e nunca casa.
+- **Busca com botão de limpar**: use `<SearchInput>` (`src/components/search-input`)
+  em vez de `<input type="search">` cru — o clear button nativo é inconsistente
+  entre navegadores e já causou bug de clique/hover.
 - **Especificidade CSS**: para sobrescrever uma regra global de outra tela
   (ex. `tbody tr:hover` usado pelas tabelas de dados) dentro de um módulo,
   escreva o seletor com o escopo do módulo (`.grid tbody tr:hover`) — ele

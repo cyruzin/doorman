@@ -15,7 +15,6 @@ export const proxy = auth((req) => {
 });
 
 export const config = {
-  // API routes enforce their own session + permission checks (see api-guard.ts)
-  // and must return JSON 401/403, not an HTML redirect — so they're excluded here.
+  // API routes enforce their own checks (api-guard.ts) and return JSON, not a redirect.
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

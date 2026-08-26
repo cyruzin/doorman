@@ -1,8 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { SchedulingRoom } from "@/generated/prisma/enums";
 
-// Every schedulable room gets a control report — the building needs a paper
-// trail of what was used vs. cancelled for billing/reconciliation.
+// Paper trail of used vs. cancelled bookings, for billing/reconciliation.
 export const REPORT_ROOMS = ["PARTY_HALL", "CINEMA", "GRILL"] as const;
 export type ReportRoom = (typeof REPORT_ROOMS)[number];
 
@@ -12,8 +11,7 @@ export const REPORT_ROOM_LABELS: Record<ReportRoom, string> = {
   GRILL: "Grill",
 };
 
-// Three independent checkboxes, not a single choice — the doorman can check
-// none, one, several, or all three at once.
+// Independent checkboxes — none, one, several, or all three can be checked.
 export interface ReportStatusFilter {
   all: boolean;
   finished: boolean;
@@ -41,9 +39,6 @@ export function parseDateRange(searchParams: URLSearchParams): DateRangeFilter |
 
   if (startRaw && isNaN(startDate!.getTime())) return { error: "Data inicial inválida" };
   if (endRaw && isNaN(endDate!.getTime())) return { error: "Data final inválida" };
-  // A booking's eventAt can itself be in the future (that's the point of
-  // scheduling ahead) and can be cancelled at any time, so the report needs
-  // to be able to cover future-dated, already-cancelled events too.
   if (startRaw && endRaw && startRaw > endRaw) {
     return { error: "A data inicial não pode ser depois da data final" };
   }
@@ -65,8 +60,7 @@ export function buildReportWhere({
   const includeFinished = statusFilter.all || statusFilter.finished;
   const includeCancelled = statusFilter.all || statusFilter.cancelled;
 
-  // Nothing checked means nothing matches — a real filter (a where clause
-  // that can never be true), not "no filter applied".
+  // Nothing checked means nothing matches, not "no filter applied".
   const statusCondition: Prisma.SchedulingEntryWhereInput =
     includeFinished && includeCancelled
       ? { OR: [{ finishedAt: { not: null } }, { cancelledAt: { not: null } }] }

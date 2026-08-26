@@ -40,8 +40,7 @@ function toTimeInputValue(date: Date): string {
   return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
-// The API returns a specific, actionable message (e.g. the same-day conflict
-// warning) as { error: string } — surface it instead of a generic fallback.
+// Surfaces the API's specific { error: string } message instead of a generic fallback.
 function extractApiErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data as { error?: unknown } | undefined;
@@ -73,8 +72,7 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
   const finishEntry = useFinishSchedulingEntry();
   const deleteEntry = useDeleteSchedulingEntry();
 
-  // Only actual residents can book a room — owning the unit doesn't mean
-  // living in it.
+  // Only residents can book a room — owning the unit doesn't mean living in it.
   const residents = occupancy?.residents ?? [];
   const selectedResident = residents.find((r) => r.id === residentId) ?? null;
 
@@ -201,8 +199,7 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
     );
   };
 
-  // Captured once per mount — good enough to flag past events and block
-  // scheduling into the past; a live-updating clock isn't needed for either.
+  // Captured once per mount — good enough to flag/block past events.
   const [now] = useState(() => Date.now());
   const todayStr = toDateInputValue(new Date(now));
   const minTime = eventDate === todayStr ? toTimeInputValue(new Date(now)) : undefined;
@@ -359,8 +356,7 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
               <tbody>
                 {entries.map((entry) => {
                   const finished = !!entry.finishedAt;
-                  // A finished event isn't "overdue" anymore — only flag one
-                  // that's still pending and already past its date/time.
+                  // Only flag as past if still pending — finished events aren't "overdue".
                   const isPast = !finished && new Date(entry.eventAt).getTime() < now;
                   return (
                     <tr key={entry.id} className={isPast ? styles.rowPast : undefined}>

@@ -1,10 +1,7 @@
 import { z } from "zod";
 import { phoneSchema, vehicleSchema } from "./contact";
 
-// name/cpf/email stay required in the shape even when isOwner is true — the
-// form auto-fills them from the picked owner, and the API re-derives them
-// from the Owner record on write regardless of what's submitted (single
-// source of truth, avoids the two records drifting apart).
+// Required even when isOwner is true — the API re-derives them from the Owner record on write.
 const residentBaseSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   cpf: z.string().optional(),

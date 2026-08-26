@@ -12,9 +12,7 @@ interface SearchInputProps {
   "aria-label"?: string;
 }
 
-// A plain `type="search"` input's native clear button is unreliable to click
-// (tiny hit target, inconsistent across browsers) — this renders our own
-// always-clickable one instead.
+// Native `type="search"` clear button has a tiny, unreliable hit target — this replaces it.
 export function SearchInput({ value, onChange, className, ...inputProps }: SearchInputProps) {
   return (
     <div className={`${styles.wrapper} ${className ?? ""}`}>

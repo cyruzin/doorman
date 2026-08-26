@@ -33,9 +33,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   const current = await prisma.resident.findUnique({ where: { id }, select: { active: true, unit: true, isOwner: true } });
   if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Activating/deactivating is the soft-delete equivalent — same permission as delete.
-  // The edit form always resubmits the resident's current `active` value even when
-  // untouched, so only gate on an actual transition, not mere presence in the payload.
+  // Activating/deactivating needs "delete" permission — only gate on an actual transition.
   if (parsed.data.active !== undefined && current.active !== parsed.data.active && !(await can(session.user.role, "residents", "delete"))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -43,8 +41,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   const { phones, vehicles, ...rest } = parsed.data;
   let ownerFields: Record<string, unknown> = {};
 
-  // Only re-resolve the owner link when something that affects it actually
-  // changed — a plain phones/vehicles edit shouldn't pay for it.
+  // Only re-resolve the owner link when something affecting it actually changed.
   if (parsed.data.unit !== undefined || parsed.data.isOwner !== undefined || parsed.data.ownerId !== undefined) {
     const resolved = await resolveResidentOwner({
       unit: parsed.data.unit ?? current.unit,

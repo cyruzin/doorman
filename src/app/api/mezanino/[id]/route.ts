@@ -25,8 +25,7 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
   const entry = await prisma.mezaninoEntry.findUnique({ where: { id } });
   if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Once the key is back, only an admin can rewrite the day's history — a
-  // doorman may only undo an entry they just added by mistake.
+  // A doorman may only undo an entry with no exit yet; admin can rewrite history.
   if (entry.exitAt && session.user.role !== "ADMIN") {
     return NextResponse.json(
       { error: "Somente o administrador pode excluir uma saída já confirmada" },

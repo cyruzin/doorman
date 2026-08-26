@@ -1,8 +1,10 @@
 # St. Tropez
 
 Sistema de gestão de portaria/condomínio: cadastro de moradores (proprietários
-e inquilinos, com vínculo entre eles), usuários do sistema (admin/porteiro),
-grid dos 110 apartamentos do prédio (19 andares) e backup do banco.
+e inquilinos, com vínculo entre eles), usuários do sistema com permissões
+editáveis por role (admin/porteiro), grid dos 110 apartamentos do prédio (19
+andares), agendamento de salão de festas e mezanino, recados, relatórios e
+backup do banco.
 
 Roda localmente numa única máquina — sem Docker, sem Postgres (SQLite).
 

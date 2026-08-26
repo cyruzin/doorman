@@ -55,8 +55,7 @@ export function NoticesPage() {
 
   const items = data?.items ?? [];
 
-  // Nobody can remove a system-generated note; a doorman may only remove
-  // their own manual ones, while an admin can remove any manual one.
+  // System notes are never removable; a doorman may only remove their own manual ones.
   const canDeleteNotice = (notice: Notice) =>
     canDelete && !notice.isAutomatic && (role === "ADMIN" || notice.authorUsername === currentUserName);
 

@@ -1,7 +1,4 @@
-// Display-only formatting for CPF/phone inputs and table cells. The stored
-// value never carries these characters — see unmask(), applied right before
-// the payload leaves the form — so the DB column and its migration are
-// untouched.
+// Display-only formatting; unmask() strips it before the payload leaves the form.
 
 export function maskCpf(value: string): string {
   return value
@@ -12,8 +9,7 @@ export function maskCpf(value: string): string {
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 }
 
-// Brazilian numbers: 10 digits (landline, "(11) 1234-5678") or 11 (mobile,
-// "(11) 91234-5678") — the split point moves once a 9th local digit shows up.
+// 10 digits = landline "(11) 1234-5678", 11 = mobile "(11) 91234-5678".
 export function maskPhone(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 11);
   if (digits.length <= 10) {

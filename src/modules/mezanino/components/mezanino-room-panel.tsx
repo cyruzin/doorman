@@ -42,8 +42,7 @@ export function MezaninoRoomPanel({ room }: MezaninoRoomPanelProps) {
   const confirmExit = useConfirmMezaninoExit();
   const deleteEntry = useDeleteMezaninoEntry();
 
-  // Only actual residents can check out a key — owning the unit doesn't
-  // mean living in it.
+  // Only residents can check out a key — owning the unit doesn't mean living in it.
   const residents = occupancy?.residents ?? [];
   const selectedResident = residents.find((r) => r.id === residentId) ?? null;
 

@@ -4,8 +4,7 @@ import { requirePermission } from "@/lib/api-guard";
 
 type RouteParams = { params: Promise<{ unit: string }> };
 
-// Occupancy is always about who's tied to the unit *now* — only the active
-// owner (there's at most one) and active residents actually living there.
+// Only the active owner (at most one) and active residents currently living there.
 export async function GET(_req: NextRequest, { params }: RouteParams) {
   const { error } = await requirePermission("residents", "read");
   if (error) return error;

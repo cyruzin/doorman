@@ -24,8 +24,10 @@ If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is 
 **St. Tropez** é um sistema de gestão de portaria/condomínio (App Router,
 100% TypeScript, roda local numa única máquina — sem Docker, sem Postgres).
 Cadastra moradores (proprietários e inquilinos, com vínculo entre eles),
-usuários do sistema (admin/porteiro) e mantém um grid dos 110 apartamentos
-do prédio (19 andares, 6 unidades por andar, exceto o 19º com 2 coberturas).
+usuários do sistema com permissões por role editáveis em banco, mantém um
+grid dos 110 apartamentos do prédio (19 andares, 6 unidades por andar, exceto
+o 19º com 2 coberturas), e cobre agendamento de salão/mezanino, recados,
+relatórios e backup do banco.
 
 Especificação original em `specs/`.
 

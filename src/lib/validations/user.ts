@@ -1,10 +1,6 @@
 import { z } from "zod";
 
-// Restricted so a username always logs in exactly as typed — no mixed case
-// or spaces to mistype (or forget) at the login prompt. Digits are allowed
-// (e.g. "porteiro2") even though they weren't in the original ask, since a
-// username charset that can't disambiguate two people with the same name
-// isn't really usable.
+// Lowercase-only so a username always logs in exactly as typed.
 export const usernameSchema = z
   .string()
   .min(3, "Usuário deve ter ao menos 3 caracteres")

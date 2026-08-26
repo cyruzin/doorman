@@ -12,8 +12,7 @@ export const ROOM_LABELS: Record<ReportRoom, string> = {
   GRILL: "Grill",
 };
 
-// Three independent checkboxes — the doorman can check none, one, several,
-// or all three at the same time.
+// Independent checkboxes — none, one, several, or all three at once.
 export interface ReportStatusFilter {
   all: boolean;
   finished: boolean;

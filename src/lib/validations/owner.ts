@@ -1,10 +1,7 @@
 import { z } from "zod";
 import { phoneSchema, vehicleSchema } from "./contact";
 
-// cpf is the dedup identifier (item 1 of the spec) when present, but stays
-// optional — the previous system allowed registering an owner without one.
-// units: an owner can hold more than one apartment (item 1.1); each unit can
-// belong to only one owner, enforced by the API (OwnerUnit.unit is unique).
+// cpf optional (legacy owners had none); each unit belongs to one owner, enforced by the API.
 export const ownerSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   cpf: z.string().optional(),

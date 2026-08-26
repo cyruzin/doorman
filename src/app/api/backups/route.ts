@@ -12,8 +12,7 @@ export async function GET(req: NextRequest) {
 
   const backups = listBackups(
     from ? new Date(from) : undefined,
-    // A data "até" sem horário vira meia-noite — sem isso, backups criados
-    // mais tarde no próprio dia ficariam fora do filtro.
+    // Sem horário, "até" vira meia-noite e exclui backups do próprio dia.
     to ? new Date(`${to}T23:59:59.999`) : undefined,
   );
   return NextResponse.json(backups);

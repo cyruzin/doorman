@@ -10,9 +10,7 @@ export interface UnitResident {
   phones: UnitPhone[];
 }
 
-// A resident who is also the unit's owner — used to detect that the
-// apartment already has its one owner represented as a resident, so the
-// "É proprietário" toggle can be hidden for anyone else registering there.
+// A resident who is also the unit's owner.
 export interface UnitOccupant extends UnitResident {
   isOwner: boolean;
 }

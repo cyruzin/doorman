@@ -50,10 +50,7 @@ export function OwnerPage({ isCreating, onCreatingChange, initialEditId }: Owner
   const updateOwner = useUpdateOwner();
   const deleteOwner = useDeleteOwner();
 
-  // `editing` can come from clicking "Editar" in the table (manualEditing holds
-  // the full row already in hand) or from a deep link like /residents?editId=...
-  // (fetched on demand via useOwnerDetail). Deriving it avoids copying query data
-  // into state with an effect — dismissedDeepLink stops it from reopening once closed.
+  // `editing` comes from the table row or a deep-linked ?editId= (fetched via useOwnerDetail).
   const [manualEditing, setManualEditing] = useState<Owner | null>(null);
   const [dismissedDeepLink, setDismissedDeepLink] = useState(false);
   const detailQuery = useOwnerDetail(dismissedDeepLink ? null : initialEditId);

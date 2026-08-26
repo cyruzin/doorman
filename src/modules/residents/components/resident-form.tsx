@@ -47,29 +47,19 @@ export function ResidentForm({ defaultValues, onSubmit, onCancel, submitLabel = 
   const phoneFields = useFieldArray({ control, name: "phones" });
   const vehicleFields = useFieldArray({ control, name: "vehicles" });
 
-  // A resident always lives at a unit that already has an owner registered —
-  // check live as the unit is typed so this can't be submitted for an
-  // apartment with nobody registered as its owner.
+  // Checked live so this can't be submitted for a unit with no registered owner.
   const unitValue = useWatch({ control, name: "unit" });
   const debouncedUnit = useDebouncedValue(unitValue, 400);
   const { data: unitOccupancy } = useUnitOccupancy(debouncedUnit || null);
   const unitHasNoOwner = !!debouncedUnit && !!unitOccupancy && !unitOccupancy.owner;
 
-  // Only one resident can represent the unit's owner — once one exists,
-  // hide the switch for everyone else registering there (editing that same
-  // resident doesn't count as "another" one).
+  // Only one resident may represent the unit's owner — hides the switch once one exists.
   const existingOwnerResident = unitOccupancy?.residents.find(
     (r) => r.isOwner && r.id !== defaultValues?.id,
   );
   const canBeOwner = !existingOwnerResident;
 
-  // "É proprietário" (item 2.1): searching and picking the unit's owner
-  // avoids re-typing their name/cpf/email as a near-duplicate record — the
-  // API re-derives those three fields from the linked Owner regardless, this
-  // search is just so the doorman doesn't have to retype them by hand.
-  // A single text field doubles as the picker: typing searches, and once
-  // ownerId is set the input just displays the picked name — no separate
-  // <select> alongside it.
+  // Single text field doubles as search + picker: typing searches, picking fills name/cpf/email.
   const isOwner = useWatch({ control, name: "isOwner" });
   const ownerId = useWatch({ control, name: "ownerId" });
   const [ownerQuery, setOwnerQuery] = useState(defaultValues?.owner?.name ?? "");
@@ -84,8 +74,7 @@ export function ResidentForm({ defaultValues, onSubmit, onCancel, submitLabel = 
 
   const handleOwnerQueryChange = (value: string) => {
     setOwnerQuery(value);
-    // Typing again after a pick means they're changing their mind — clear
-    // the stale link until a new one is actually picked from the list.
+    // Retyping after a pick clears the stale link until a new one is picked.
     if (ownerId) setValue("ownerId", undefined);
   };
 
@@ -97,15 +86,12 @@ export function ResidentForm({ defaultValues, onSubmit, onCancel, submitLabel = 
     setOwnerQuery(owner.name);
   };
 
-  // Switching the toggle off clears the link — the name/cpf/email fields
-  // become editable again instead of staying locked to a stale owner.
+  // Toggling off clears the link so name/cpf/email become editable again.
   useEffect(() => {
     if (!isOwner) setValue("ownerId", undefined);
   }, [isOwner, setValue]);
 
-  // The unit changed (or its occupancy loaded) and it turns out someone else
-  // already represents the owner there — force the toggle back off instead
-  // of leaving a now-invalid isOwner:true sitting in the form.
+  // Someone else already owns the unit — force the toggle back off.
   useEffect(() => {
     if (!canBeOwner && isOwner) setValue("isOwner", false);
   }, [canBeOwner, isOwner, setValue]);

@@ -17,8 +17,7 @@ async function loadOccupancy() {
   return {
     totalUnits: getAllUnits().length,
     occupiedUnits,
-    // Ownership alone doesn't make someone a "morador" — only actual
-    // residents count, matching the new owner/resident split.
+    // Ownership alone doesn't make someone a "morador" — only residents count.
     totalResidents: residents.length,
   };
 }
@@ -53,8 +52,7 @@ function loadPinnedNotices() {
 }
 
 export async function GET() {
-  // Every role that can reach the dashboard already has at least resident
-  // read access — used as the baseline auth gate for the whole summary.
+  // "residents" read is the baseline auth gate — every dashboard role has it.
   const { session, error } = await requirePermission("residents", "read");
   if (error) return error;
 

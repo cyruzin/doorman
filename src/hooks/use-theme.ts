@@ -27,7 +27,7 @@ export function useTheme() {
     try {
       localStorage.setItem("theme", next);
     } catch {
-      // ponytail: localStorage can throw in private browsing, theme just won't persist
+      // localStorage can throw in private browsing; theme just won't persist
     }
   }, []);
 

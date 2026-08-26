@@ -1,5 +1,4 @@
-// Simple stroke icons using currentColor — they inherit the nav link's text
-// color automatically, so no separate light/dark variants are needed.
+// currentColor inherits the nav link's text color — no light/dark variants needed.
 type IconProps = { className?: string };
 
 const base = {

@@ -37,8 +37,7 @@ export async function GET(req: NextRequest) {
     generatedBy: session.user.name ?? "—",
   });
 
-  // Includes seconds so generating two reports the same minute doesn't
-  // produce the same filename.
+  // Includes seconds so two reports the same minute don't collide.
   const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   const fileName = `relatorio-${room.toLowerCase().replace("_", "-")}-${timestamp}.pdf`;
 

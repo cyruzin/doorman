@@ -85,9 +85,7 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
 
   const { id } = await params;
 
-  // A resident record that IS this owner would be left dangling (isOwner:
-  // true, ownerId pointing nowhere) — block the delete instead of silently
-  // orphaning it.
+  // Block the delete instead of orphaning a resident record linked to this owner.
   const linkedResident = await prisma.resident.findFirst({ where: { ownerId: id }, select: { id: true } });
   if (linkedResident) {
     return NextResponse.json(

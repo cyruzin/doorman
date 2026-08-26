@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { SchedulingRoom } from "@/generated/prisma/enums";
 
-// A booking normally owns its whole day; the "mais de um evento no mesmo
-// dia" checkbox is the doorman's explicit override to skip this check.
+// A booking normally owns its whole day; "mais de um evento no mesmo dia" overrides that.
 export async function hasSchedulingConflict(
   room: SchedulingRoom,
   eventAt: Date,
@@ -24,16 +23,14 @@ export async function hasSchedulingConflict(
   return count > 0;
 }
 
-// Monthly capacity for the room: the share of this month's calendar days
-// that already have a booking (0% = month wide open, 100% = every day taken).
+// Share of this month's days already booked (0% = wide open, 100% = full).
 export async function getCapacityPercent(room: SchedulingRoom): Promise<number> {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const totalDays = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
-  // Cancelled bookings don't occupy the day — only what's still pending or
-  // already happened counts, so cancelling frees the day back up.
+  // Cancelled bookings don't occupy the day.
   const monthEntries = await prisma.schedulingEntry.findMany({
     where: { room, eventAt: { gte: startOfMonth, lt: startOfNextMonth }, cancelledAt: null },
     select: { eventAt: true },

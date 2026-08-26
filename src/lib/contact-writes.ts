@@ -1,7 +1,4 @@
-// phones/vehicles arrive as plain arrays from the form; Prisma needs them as
-// nested writes. On update, `deleteMany: {}` + `create` fully replaces the set —
-// simpler than diffing add/edit/remove for what's a handful of rows per person.
-// Shared by Owner and Resident writes — both have the same phones/vehicles shape.
+// On update, deleteMany + create fully replaces the set — simpler than diffing rows.
 export function contactNestedWrites(
   data: { phones?: unknown; vehicles?: unknown },
   isUpdate: boolean,

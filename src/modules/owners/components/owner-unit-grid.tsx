@@ -9,8 +9,7 @@ interface OwnerUnitGridProps {
   onToggle: (unit: string) => void;
 }
 
-// Multi-select twin of ApartmentGrid — an owner can hold several units at
-// once, so this toggles membership in a list instead of picking exactly one.
+// Multi-select twin of ApartmentGrid — an owner can hold several units.
 export function OwnerUnitGrid({ selectedUnits, onToggle }: OwnerUnitGridProps) {
   const floors = getFloors();
   const positions = Array.from({ length: MAX_UNITS_PER_FLOOR }, (_, i) => i + 1);

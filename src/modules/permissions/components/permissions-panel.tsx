@@ -42,14 +42,9 @@ export function PermissionsPanel() {
   const { data, isLoading, isError } = usePermissionsMatrix();
   const updateMatrix = useUpdatePermissionsMatrix();
   const { showToast } = useToast();
-  // Initialized from `data` too: when the matrix is already cached (e.g. the
-  // nav bar fetched it first), this mounts with `data` present on the very
-  // first render, so the sync effect below never fires — without this,
-  // `draft` would stay null and the panel would be stuck on "Carregando...".
+  // Seeded from `data` too: if the matrix is already cached, draft must not start null.
   const [draft, setDraft] = useState<PermissionsMatrix | null>(data ?? null);
-  // Sync local edits from the fetched matrix once it (re)loads — done during
-  // render (React's recommended pattern for this) rather than in an effect,
-  // so it doesn't cost an extra commit.
+  // Syncs during render (not an effect) whenever the fetched matrix changes.
   const [syncedFrom, setSyncedFrom] = useState(data);
   if (data && data !== syncedFrom) {
     setSyncedFrom(data);

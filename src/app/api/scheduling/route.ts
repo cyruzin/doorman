@@ -19,14 +19,11 @@ export async function GET(req: NextRequest) {
   }
 
   const { page, pageSize, skip } = parsePagination(req);
-  // Cancelled events fall off the listing — they never happened. Finished
-  // ones stay, so the capacity percentage (which counts them) is explained
-  // by what's visibly in the list instead of silently disappearing.
+  // Cancelled events fall off the listing; finished ones stay.
   const where = { room, cancelledAt: null };
 
   const [items, total, capacityPercent] = await Promise.all([
-    // Pending entries (finishedAt: null) first — they're what needs
-    // attention — then finished ones, each group newest-event-first.
+    // Pending entries first (need attention), then finished, each group newest-first.
     prisma.schedulingEntry.findMany({
       where,
       orderBy: [{ finishedAt: { sort: "asc", nulls: "first" } }, { eventAt: "desc" }],
@@ -57,9 +54,7 @@ export async function POST(req: NextRequest) {
 
   const { room, unit, residentId, eventAt, allowMultipleSameDay, notes } = parsed.data;
 
-  // The resident is picked client-side from the unit's current occupants —
-  // re-verify it's still a real, active resident of this unit rather than
-  // trusting the submitted id blindly.
+  // Re-verify residentId is still a real, active resident of this unit — don't trust the client.
   const resident = await prisma.resident.findFirst({ where: { id: residentId, unit, active: true }, select: { name: true } });
   if (!resident) {
     return NextResponse.json({ error: "Morador inválido para esse apartamento" }, { status: 400 });

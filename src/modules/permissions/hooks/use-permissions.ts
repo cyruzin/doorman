@@ -25,8 +25,6 @@ export function useUpdatePermissionsMatrix() {
   });
 }
 
-// Drop-in replacement for the old sync `can(role, resource, action)` — reads
-// the current user's role from the session and looks it up in the fetched matrix.
 export function usePermissions() {
   const { data: session } = useSession();
   const { data: matrix } = usePermissionsMatrix();

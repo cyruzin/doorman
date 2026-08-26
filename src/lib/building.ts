@@ -1,6 +1,4 @@
-// The building's fixed physical layout — 19 floors, 6 apartments each, except
-// the top floor which only has 2 (coberturas). This is not stored data, it's
-// derived purely from these constants.
+// Fixed layout: 19 floors, 6 units each, except the top floor (2 coberturas).
 const TOTAL_FLOORS = 19;
 const UNITS_PER_FLOOR = 6;
 const TOP_FLOOR_UNITS = 2;

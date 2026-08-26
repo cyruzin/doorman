@@ -4,8 +4,7 @@ interface ResolveInput {
   unit: string;
   isOwner: boolean;
   ownerId?: string;
-  // The resident being edited, so it doesn't count as "another" owner-resident
-  // when re-validating its own existing isOwner:true link.
+  // The resident being edited — excluded so it isn't flagged as "another" owner-resident.
   excludeResidentId?: string;
 }
 
@@ -13,14 +12,8 @@ type ResolveResult =
   | { fields: { ownerId: string | null; name?: string; cpf?: string | null; email?: string | null } }
   | { error: string };
 
-// A resident always lives at a unit that already has an owner registered —
-// there's nothing to pick otherwise, the apartment number already implies it.
-// When the resident claims to *be* the owner (isOwner), the picked ownerId
-// must be that same unit's owner — "one owner per unit" means there's only
-// ever one valid choice — and name/cpf/email are derived from that Owner
-// record instead of trusting whatever the client submitted (single source
-// of truth, avoids the two records drifting apart). Since there's only one
-// owner per unit, at most one resident may carry isOwner:true for it too.
+// isOwner:true must match that unit's one registered owner; name/cpf/email come from
+// the Owner record (not the client) so the two never drift apart.
 export async function resolveResidentOwner(input: ResolveInput): Promise<ResolveResult> {
   const ownerUnit = await prisma.ownerUnit.findFirst({
     where: { unit: input.unit, owner: { active: true } },

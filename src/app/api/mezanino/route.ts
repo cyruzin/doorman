@@ -29,8 +29,7 @@ export async function GET(req: NextRequest) {
   const [items, total, occupiedCount] = await Promise.all([
     prisma.mezaninoEntry.findMany({ where, orderBy: { entryAt: "desc" }, skip, take: pageSize }),
     prisma.mezaninoEntry.count({ where }),
-    // Occupancy isn't bound to "today" — an entry opened right before midnight
-    // still means the room is in use.
+    // Occupancy isn't bound to "today" — an entry from before midnight still counts.
     prisma.mezaninoEntry.count({ where: { room, exitAt: null } }),
   ]);
 
@@ -54,9 +53,7 @@ export async function POST(req: NextRequest) {
 
   const { room, unit, residentId } = parsed.data;
 
-  // The resident is picked client-side from the unit's current occupants —
-  // re-verify it's still a real, active resident of this unit rather than
-  // trusting the submitted id blindly.
+  // Re-verify residentId is still a real, active resident of this unit — don't trust the client.
   const resident = await prisma.resident.findFirst({ where: { id: residentId, unit, active: true }, select: { name: true } });
   if (!resident) {
     return NextResponse.json({ error: "Morador inválido para esse apartamento" }, { status: 400 });

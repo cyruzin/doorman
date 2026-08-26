@@ -31,9 +31,7 @@ export function PeoplePage() {
     setIsCreating(false);
   };
 
-  // A resident always needs an existing owner for their unit — a cheap
-  // existence check (not a full list), just enough to know whether any
-  // owner exists at all, to gate resident creation.
+  // Cheap existence check — just enough to know if any owner exists, to gate resident creation.
   const { data: ownerExistence } = useOwners({ pageSize: 1, status: "active" });
   const hasAnyOwner = (ownerExistence?.total ?? 0) > 0;
 
@@ -48,8 +46,6 @@ export function PeoplePage() {
   const resource = kind === "resident" ? "residents" : "owners";
   const entityLabel = kind === "resident" ? "Morador" : "Proprietário";
   const canCreate = can(resource, "create");
-  // A resident always needs an owner already registered for their unit —
-  // block resident creation until one exists.
   const blockResidentCreate = kind === "resident" && !hasAnyOwner;
 
   return (
