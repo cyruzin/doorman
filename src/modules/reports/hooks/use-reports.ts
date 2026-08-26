@@ -4,9 +4,11 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { reportsApi } from "../api";
 import type { ReportListParams } from "../types";
 
+export const reportsQueryKey = ["reports"];
+
 export function useReportEntries(params: ReportListParams) {
   return useQuery({
-    queryKey: ["reports", params],
+    queryKey: [...reportsQueryKey, params],
     queryFn: () => reportsApi.list(params),
   });
 }

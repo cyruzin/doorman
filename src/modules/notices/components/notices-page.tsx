@@ -30,6 +30,7 @@ export function NoticesPage() {
   const canCreate = can("notices", "create");
   const canDelete = can("notices", "delete");
 
+  const [isCreating, setIsCreating] = useState(false);
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState("");
   const [showOnHome, setShowOnHome] = useState(false);
@@ -66,10 +67,17 @@ export function NoticesPage() {
       setMessage("");
       setShowOnHome(false);
       setPage(1);
+      setIsCreating(false);
       showToast("Recado registrado", "success");
     } catch {
       showToast("Erro ao registrar recado", "error");
     }
+  };
+
+  const handleCancelCreate = () => {
+    setIsCreating(false);
+    setMessage("");
+    setShowOnHome(false);
   };
 
   const handleDelete = (notice: Notice) => {
@@ -91,10 +99,19 @@ export function NoticesPage() {
 
   return (
     <div className="page">
-      <h1 className={styles.title}>Recados</h1>
-      <p className={styles.subtitle}>Livro de plantão. Deixe um recado para o próximo porteiro.</p>
+      <div className={styles.header}>
+        <div>
+          <h1 className={styles.title}>{isCreating ? "Novo recado" : "Recados"}</h1>
+          <p className={styles.subtitle}>Livro de plantão. Deixe um recado para o próximo porteiro.</p>
+        </div>
+        {canCreate && !isCreating && (
+          <button type="button" className="btn btn-primary" onClick={() => setIsCreating(true)}>
+            Novo recado
+          </button>
+        )}
+      </div>
 
-      {canCreate && (
+      {isCreating && (
         <div className={`card ${styles.formCard}`}>
           <textarea
             className="input"
@@ -119,6 +136,9 @@ export function NoticesPage() {
           </label>
 
           <div className={styles.formActions}>
+            <button type="button" className="btn btn-secondary" onClick={handleCancelCreate}>
+              Cancelar
+            </button>
             <button
               type="button"
               className="btn btn-primary"
@@ -131,79 +151,87 @@ export function NoticesPage() {
         </div>
       )}
 
-      <h2 className={styles.sectionTitle}>Filtrar por período</h2>
-      <div className={`card ${styles.filterRow}`}>
-        <div className="form-field">
-          <label htmlFor="noticeStartDate">Data inicial</label>
-          <input
-            id="noticeStartDate"
-            type="date"
-            className="input"
-            max={endDate || undefined}
-            value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value);
-              setPage(1);
-            }}
-          />
-        </div>
-
-        <div className="form-field">
-          <label htmlFor="noticeEndDate">Data final</label>
-          <input
-            id="noticeEndDate"
-            type="date"
-            className="input"
-            min={startDate || undefined}
-            value={endDate}
-            onChange={(e) => {
-              setEndDate(e.target.value);
-              setPage(1);
-            }}
-          />
-        </div>
-
-        <button
-          type="button"
-          className="btn btn-secondary"
-          disabled={!startDate && !endDate}
-          onClick={() => {
-            setStartDate("");
-            setEndDate("");
-            setPage(1);
-          }}
-        >
-          Resetar filtro
-        </button>
-      </div>
-
-      <h2 className={styles.sectionTitle}>Últimos recados</h2>
-
-      {isLoading ? (
-        <p>Carregando...</p>
-      ) : items.length === 0 ? (
-        <p className="text-muted">Nenhum recado registrado.</p>
-      ) : (
-        <>
-          <div className={styles.list}>
-            {items.map((notice) => (
-              <div key={notice.id} className={`card ${styles.notice}`}>
-                <p className={styles.message}>{notice.message}</p>
-                <div className={styles.noticeFooter}>
-                  <span className={styles.meta}>
-                    {notice.authorUsername} · {formatTimestamp(notice.createdAt)}
-                  </span>
-                  {canDeleteNotice(notice) && (
-                    <button type="button" className="btn btn-secondary" onClick={() => handleDelete(notice)}>
-                      Excluir
-                    </button>
-                  )}
-                </div>
+      {!isCreating && (
+        <div className={`card ${styles.listCard}`}>
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>Filtrar por período</h2>
+            <div className={styles.filterRow}>
+              <div className="form-field">
+                <label htmlFor="noticeStartDate">Data inicial</label>
+                <input
+                  id="noticeStartDate"
+                  type="date"
+                  className="input"
+                  max={endDate || undefined}
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setPage(1);
+                  }}
+                />
               </div>
-            ))}
+
+              <div className="form-field">
+                <label htmlFor="noticeEndDate">Data final</label>
+                <input
+                  id="noticeEndDate"
+                  type="date"
+                  className="input"
+                  min={startDate || undefined}
+                  value={endDate}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    setPage(1);
+                  }}
+                />
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={!startDate && !endDate}
+                onClick={() => {
+                  setStartDate("");
+                  setEndDate("");
+                  setPage(1);
+                }}
+              >
+                Resetar filtro
+              </button>
+            </div>
           </div>
-          <Pagination page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPageChange={setPage} />
-        </>
+
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>Últimos recados</h2>
+
+            {isLoading ? (
+              <p>Carregando...</p>
+            ) : items.length === 0 ? (
+              <p className="text-muted">Nenhum recado registrado.</p>
+            ) : (
+              <>
+                <div className={styles.list}>
+                  {items.map((notice) => (
+                    <div key={notice.id} className={styles.notice}>
+                      <p className={styles.message}>{notice.message}</p>
+                      <div className={styles.noticeFooter}>
+                        <span className={styles.meta}>
+                          {notice.authorUsername} · {formatTimestamp(notice.createdAt)}
+                        </span>
+                        {canDeleteNotice(notice) && (
+                          <button type="button" className="btn btn-secondary" onClick={() => handleDelete(notice)}>
+                            Excluir
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Pagination page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPageChange={setPage} />
+              </>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

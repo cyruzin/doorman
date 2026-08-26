@@ -37,7 +37,7 @@ export function ApartmentDetail({ unit }: ApartmentDetailProps) {
               <tbody>
                 <tr>
                   <td>
-                    <Link href={`/residents?kind=owner&editId=${owner.id}`} className={styles.personLink}>
+                    <Link href={`/residents?kind=owner&q=${encodeURIComponent(owner.name)}`} className={styles.personLink}>
                       {owner.name}
                     </Link>
                   </td>
@@ -64,7 +64,7 @@ export function ApartmentDetail({ unit }: ApartmentDetailProps) {
                 {residents.map((resident) => (
                   <tr key={resident.id}>
                     <td>
-                      <Link href={`/residents?kind=resident&editId=${resident.id}`} className={styles.personLink}>
+                      <Link href={`/residents?kind=resident&q=${encodeURIComponent(resident.name)}`} className={styles.personLink}>
                         {resident.name}
                       </Link>
                     </td>

@@ -4,6 +4,8 @@ import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ownerSchema, type OwnerInput as OwnerFormValues } from "@/lib/validations/owner";
 import { maskCpf, maskPhone, unmask } from "@/lib/helpers/masks";
+import { useOccupiedUnits } from "@/modules/apartments/hooks/use-occupied-units";
+import { useClaimedUnits } from "../hooks/use-owners";
 import type { Owner, OwnerInput } from "../types";
 import { OwnerUnitGrid } from "./owner-unit-grid";
 import styles from "./owner-form.module.css";
@@ -42,6 +44,8 @@ export function OwnerForm({ defaultValues, onSubmit, onCancel, submitLabel = "Sa
 
   const units = useWatch({ control, name: "units" }) ?? [];
   const sortedUnits = [...units].sort();
+  const { data: claimedUnits = {} } = useClaimedUnits(defaultValues?.id);
+  const { data: occupiedUnits } = useOccupiedUnits();
 
   const toggleUnit = (unit: string) => {
     const next = units.includes(unit) ? units.filter((u) => u !== unit) : [...units, unit];
@@ -97,7 +101,7 @@ export function OwnerForm({ defaultValues, onSubmit, onCancel, submitLabel = "Sa
         <p className={sortedUnits.length > 0 ? styles.unitsSummary : "text-muted"}>
           {sortedUnits.length > 0 ? `Apartamentos: ${sortedUnits.join(", ")}` : "Nenhum apartamento selecionado."}
         </p>
-        <OwnerUnitGrid selectedUnits={units} onToggle={toggleUnit} />
+        <OwnerUnitGrid selectedUnits={units} onToggle={toggleUnit} claimedUnits={claimedUnits} occupiedUnits={occupiedUnits} />
         {errors.units?.message && <span className="field-error">{errors.units.message}</span>}
       </div>
 

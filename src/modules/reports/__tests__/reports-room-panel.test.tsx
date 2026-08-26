@@ -9,9 +9,14 @@ const useReportEntriesMock = vi.fn();
 
 let listData: ReportListResult | undefined = { items: [], total: 0, page: 1, pageSize: 20 };
 let isLoading = false;
+let canGeneratePdf = true;
 
 vi.mock("@/hooks/use-debounced-value", () => ({
   useDebouncedValue: (value: unknown) => value,
+}));
+
+vi.mock("@/modules/permissions/hooks/use-permissions", () => ({
+  usePermissions: () => ({ can: (_resource: string, action: string) => (action === "create" ? canGeneratePdf : true) }),
 }));
 
 vi.mock("../hooks/use-reports", () => ({
@@ -52,6 +57,7 @@ describe("ReportsRoomPanel", () => {
     mutateAsyncGenerate.mockResolvedValue(new Blob(["%PDF"], { type: "application/pdf" }));
     listData = { items: [], total: 0, page: 1, pageSize: 20 };
     isLoading = false;
+    canGeneratePdf = true;
     useReportEntriesMock.mockReset();
     useReportEntriesMock.mockImplementation(() => ({ data: listData, isLoading }));
 
@@ -139,6 +145,8 @@ describe("ReportsRoomPanel", () => {
   });
 
   it("disables Gerar relatório until both dates are filled in", async () => {
+    listData = { items: [entry()], total: 1, page: 1, pageSize: 20 };
+    useReportEntriesMock.mockImplementation(() => ({ data: listData, isLoading }));
     renderPanel();
     expect(screen.getByRole("button", { name: /gerar relatório/i })).toBeDisabled();
 
@@ -147,6 +155,22 @@ describe("ReportsRoomPanel", () => {
 
     await userEvent.type(screen.getByLabelText("Data final"), "2026-08-10");
     expect(screen.getByRole("button", { name: /gerar relatório/i })).toBeEnabled();
+  });
+
+  it("disables Gerar relatório when the filter matches no entries", async () => {
+    renderPanel();
+
+    await userEvent.type(screen.getByLabelText("Data inicial"), "2026-08-01");
+    await userEvent.type(screen.getByLabelText("Data final"), "2026-08-10");
+
+    expect(screen.getByRole("button", { name: /gerar relatório/i })).toBeDisabled();
+  });
+
+  it("hides Gerar relatório without the reports create permission", () => {
+    canGeneratePdf = false;
+    renderPanel();
+
+    expect(screen.queryByRole("button", { name: /gerar relatório/i })).not.toBeInTheDocument();
   });
 
   it("allows picking a future end date — a future-dated event may already be cancelled", async () => {
@@ -185,6 +209,8 @@ describe("ReportsRoomPanel", () => {
   });
 
   it("generates and downloads the PDF after filling both dates", async () => {
+    listData = { items: [entry()], total: 1, page: 1, pageSize: 20 };
+    useReportEntriesMock.mockImplementation(() => ({ data: listData, isLoading }));
     renderPanel();
 
     await userEvent.type(screen.getByLabelText("Data inicial"), "2026-08-01");
@@ -208,6 +234,8 @@ describe("ReportsRoomPanel", () => {
 
   it("shows an error toast when PDF generation fails", async () => {
     mutateAsyncGenerate.mockRejectedValueOnce(new Error("fail"));
+    listData = { items: [entry()], total: 1, page: 1, pageSize: 20 };
+    useReportEntriesMock.mockImplementation(() => ({ data: listData, isLoading }));
     renderPanel();
 
     await userEvent.type(screen.getByLabelText("Data inicial"), "2026-08-01");

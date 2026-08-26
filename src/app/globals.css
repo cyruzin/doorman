@@ -201,6 +201,80 @@ select.input {
   color: var(--color-danger);
 }
 
+/* ---------- tooltip (hover/focus hint via data-tooltip, not the native title attr —
+   title has a hover delay, never triggers on touch, and isn't captured by screenshot
+   or devtools tools) ---------- */
+
+[data-tooltip] {
+  position: relative;
+}
+
+/* Bubble sits above the trigger; ::before draws the little downward-pointing arrow
+   connecting it back to the element, so it doesn't just float ambiguously nearby. */
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-neutral-900);
+  color: var(--color-neutral-0);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+  z-index: 20;
+}
+
+/* A 5px solid border on a 0×0 box renders as 4 triangles meeting in the middle;
+   coloring only border-top leaves just the top one visible — a downward-pointing
+   caret occupying the box's top half. Flush against ::after's bottom (100% + 10px
+   above minus the box's own 10px height = exactly 100%) so the two touch with no
+   gap for ::after to paint over and hide it. */
+[data-tooltip]::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--color-neutral-900);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+  z-index: 20;
+}
+
+/* :focus-visible only, not :focus-within — the latter also matches a plain mouse
+   click (button keeps focus after you release), which left the tooltip stuck open
+   until something else stole focus. :focus-visible excludes that, keyboard Tab
+   navigation still shows it. */
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before,
+[data-tooltip]:focus-visible::after,
+[data-tooltip]:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Dark-on-dark barely stood out against the page background — flip to a light
+   bubble with dark text (and a matching arrow) so it still pops in dark mode. */
+:root[data-theme="dark"] [data-tooltip]::after {
+  background: var(--color-neutral-0);
+  color: var(--color-neutral-900);
+}
+
+:root[data-theme="dark"] [data-tooltip]::before {
+  border-top-color: var(--color-neutral-0);
+}
+
 /* ---------- segmented control (e.g. Inquilino / Proprietário) ---------- */
 
 .segmented {

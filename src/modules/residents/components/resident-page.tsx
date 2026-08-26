@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { SearchInput } from "@/components/search-input/search-input";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Pagination } from "@/components/pagination/pagination";
-import { useCreateResident, useDeleteResident, useResidentDetail, useResidents, useUpdateResident } from "../hooks/use-residents";
+import { useCreateResident, useDeleteResident, useResidents, useUpdateResident } from "../hooks/use-residents";
 import type { Resident, ResidentStatusFilter, ResidentWriteInput } from "../types";
 import { ResidentForm } from "./resident-form";
 import { ResidentTable } from "./resident-table";
@@ -20,11 +20,13 @@ interface ResidentPageProps {
    * button can live next to the tab switcher. */
   isCreating: boolean;
   onCreatingChange: (value: boolean) => void;
-  /** Opens the edit form for this id on mount (e.g. deep-linked from the Apartments detail panel). */
-  initialEditId: string | null;
+  /** Seeds the search box (e.g. deep-linked from the Apartments detail panel). */
+  initialSearch: string | null;
+  /** Reports whether an edit form is open, so the parent header can reflect it. */
+  onEditingChange?: (editing: boolean) => void;
 }
 
-export function ResidentPage({ isCreating, onCreatingChange, initialEditId }: ResidentPageProps) {
+export function ResidentPage({ isCreating, onCreatingChange, initialSearch, onEditingChange }: ResidentPageProps) {
   const { can } = usePermissions();
   const { showToast } = useToast();
   const requestConfirm = useConfirm();
@@ -33,7 +35,7 @@ export function ResidentPage({ isCreating, onCreatingChange, initialEditId }: Re
   const canUpdate = can("residents", "update");
   const canDelete = can("residents", "delete");
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch ?? "");
   const [status, setStatus] = useState<ResidentStatusFilter>("active");
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebouncedValue(search);
@@ -51,18 +53,17 @@ export function ResidentPage({ isCreating, onCreatingChange, initialEditId }: Re
   const deleteResident = useDeleteResident();
 
   const [manualEditing, setManualEditing] = useState<Resident | null>(null);
-  const [dismissedDeepLink, setDismissedDeepLink] = useState(false);
-  const detailQuery = useResidentDetail(dismissedDeepLink ? null : initialEditId);
-  const editing = isCreating ? null : (manualEditing ?? (dismissedDeepLink ? null : detailQuery.data ?? null));
+  const editing = isCreating ? null : manualEditing;
+
+  useEffect(() => {
+    onEditingChange?.(!!editing);
+  }, [editing, onEditingChange]);
 
   if (!canRead) {
     return <p className="text-muted">Você não tem permissão para acessar os moradores.</p>;
   }
 
-  const closeEditing = () => {
-    setManualEditing(null);
-    setDismissedDeepLink(true);
-  };
+  const closeEditing = () => setManualEditing(null);
 
   const handleEdit = (resident: Resident) => {
     onCreatingChange(false);
@@ -153,39 +154,43 @@ export function ResidentPage({ isCreating, onCreatingChange, initialEditId }: Re
         </div>
       )}
 
-      <div className={styles.filters}>
-        <SearchInput
-          className="search-bar"
-          placeholder="Buscar morador por nome..."
-          value={search}
-          onChange={handleSearchChange}
-          aria-label="Buscar morador"
-        />
-        <select
-          className="input"
-          value={status}
-          onChange={(e) => handleStatusChange(e.target.value as ResidentStatusFilter)}
-          aria-label="Filtrar por status"
-        >
-          <option value="active">Ativos</option>
-          <option value="inactive">Inativos</option>
-          <option value="all">Todos</option>
-        </select>
-      </div>
-
-      {isLoading ? (
-        <p>Carregando...</p>
-      ) : (
+      {!isCreating && !editing && (
         <>
-          <ResidentTable
-            items={residents}
-            canUpdate={canUpdate}
-            canDelete={canDelete}
-            onEdit={handleEdit}
-            onToggleActive={handleToggleActive}
-            onDelete={handleDelete}
-          />
-          <Pagination page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPageChange={setPage} />
+          <div className={styles.filters}>
+            <SearchInput
+              className="search-bar"
+              placeholder="Buscar morador por nome..."
+              value={search}
+              onChange={handleSearchChange}
+              aria-label="Buscar morador"
+            />
+            <select
+              className="input"
+              value={status}
+              onChange={(e) => handleStatusChange(e.target.value as ResidentStatusFilter)}
+              aria-label="Filtrar por status"
+            >
+              <option value="active">Ativos</option>
+              <option value="inactive">Inativos</option>
+              <option value="all">Todos</option>
+            </select>
+          </div>
+
+          {isLoading ? (
+            <p>Carregando...</p>
+          ) : (
+            <>
+              <ResidentTable
+                items={residents}
+                canUpdate={canUpdate}
+                canDelete={canDelete}
+                onEdit={handleEdit}
+                onToggleActive={handleToggleActive}
+                onDelete={handleDelete}
+              />
+              <Pagination page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPageChange={setPage} />
+            </>
+          )}
         </>
       )}
     </div>

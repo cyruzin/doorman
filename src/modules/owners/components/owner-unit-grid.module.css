@@ -1,7 +1,7 @@
 .wrapper {
   padding: var(--space-3);
-  /* Fixed-layout table below always fits its container — no horizontal scroll. */
-  overflow: hidden;
+  /* table-layout: fixed below already keeps the table from ever exceeding this width —
+     no overflow:hidden here, so a claimed unit's tooltip can spill past the card edge. */
 }
 
 .mobileOnly {
@@ -66,6 +66,35 @@
   background: var(--color-accent);
   color: var(--color-accent-contrast);
   border-color: var(--color-accent);
+}
+
+/* Occupied/free hint for units not already claimed by someone else — a left-edge
+   accent only, so it never competes with the accent-filled selected state above. */
+.cellFree {
+  border-left: 3px solid var(--color-success);
+}
+
+.cellOccupied {
+  border-left: 3px solid var(--color-warning);
+}
+
+.cellClaimed {
+  background: var(--color-neutral-200);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cellClaimed:hover {
+  background: var(--color-neutral-200);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  transform: none;
+}
+
+:root[data-theme="dark"] .cellClaimed {
+  background: var(--color-border-strong);
 }
 
 .mobilePanel {

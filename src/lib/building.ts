@@ -21,6 +21,11 @@ export function getUnitNumber(floor: number, position: number): string {
   return `${floor}${String(position).padStart(2, "0")}`;
 }
 
+// Inverse of getUnitNumber — position is always the last 2 digits.
+export function getFloorFromUnit(unit: string): number {
+  return Number(unit.slice(0, -2));
+}
+
 export function getAllUnits(): BuildingUnit[] {
   const units: BuildingUnit[] = [];
   for (const floor of getFloors()) {

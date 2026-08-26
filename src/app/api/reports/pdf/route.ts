@@ -6,7 +6,7 @@ import { REPORT_ROOMS, buildReportWhere, parseDateRange, parseStatusFilter, type
 import { buildSchedulingReportPdf } from "@/lib/pdf/scheduling-report";
 
 export async function GET(req: NextRequest) {
-  const { session, error } = await requirePermission("reports", "read");
+  const { session, error } = await requirePermission("reports", "create");
   if (error) return error;
 
   const { searchParams } = new URL(req.url);

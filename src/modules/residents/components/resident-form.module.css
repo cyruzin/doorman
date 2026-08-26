@@ -19,36 +19,6 @@
   color: var(--color-text-muted);
 }
 
-.ownerResults {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-
-.ownerResultButton {
-  padding: var(--space-2) var(--space-3);
-  text-align: left;
-  font-size: var(--text-sm);
-  background: transparent;
-}
-
-.ownerResultButton:hover {
-  background: var(--color-background);
-}
-
-.ownerResultButton + .ownerResultButton {
-  border-top: 1px solid var(--color-border);
-}
-
-.ownerSelected {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-sm);
-}
-
 .repeatingRow {
   display: flex;
   align-items: flex-end;

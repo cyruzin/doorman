@@ -1,7 +1,7 @@
 .wrapper {
   padding: var(--space-3);
-  /* Fixed-layout table below always fits its container — no horizontal scroll. */
-  overflow: hidden;
+  /* table-layout: fixed below already keeps the table from ever exceeding this width —
+     no overflow:hidden here, so a unit's status tooltip can spill past the card edge. */
 }
 
 .mobileOnly {
@@ -68,6 +68,16 @@
   background: var(--color-accent);
   color: var(--color-accent-contrast);
   border-color: var(--color-accent);
+}
+
+/* Occupied/free hint — a left-edge accent only, so it never competes with the
+   accent-filled selected state above. */
+.cellFree {
+  border-left: 3px solid var(--color-success);
+}
+
+.cellOccupied {
+  border-left: 3px solid var(--color-warning);
 }
 
 /* ---------- mobile: floor picker + that floor's units ---------- */

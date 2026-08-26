@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { SearchInput } from "@/components/search-input/search-input";
 import { useToast } from "@/components/toast/toast-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -60,6 +61,8 @@ function downloadBlob(blob: Blob, fileName: string) {
 const DEFAULT_STATUS_FILTER: ReportStatusFilter = { all: true, finished: false, cancelled: false };
 
 export function ReportsRoomPanel({ room }: ReportsRoomPanelProps) {
+  const { can } = usePermissions();
+  const canGeneratePdf = can("reports", "create");
   const { showToast } = useToast();
 
   const [statusFilter, setStatusFilter] = useState<ReportStatusFilter>(DEFAULT_STATUS_FILTER);
@@ -81,7 +84,7 @@ export function ReportsRoomPanel({ room }: ReportsRoomPanelProps) {
   const generatePdf = useGenerateReportPdf();
 
   const entries = data?.items ?? [];
-  const canGenerate = !!startDate && !!endDate;
+  const canGenerate = canGeneratePdf && !!startDate && !!endDate && (data?.total ?? 0) > 0;
 
   const toggleStatus = (key: keyof ReportStatusFilter) => {
     setStatusFilter((current) => ({ ...current, [key]: !current[key] }));
@@ -210,14 +213,16 @@ export function ReportsRoomPanel({ room }: ReportsRoomPanelProps) {
           <button type="button" className="btn btn-secondary" onClick={resetFilters}>
             Resetar filtros
           </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={!canGenerate || generatePdf.isPending}
-            onClick={handleGenerate}
-          >
-            {generatePdf.isPending ? "Gerando..." : "Gerar relatório"}
-          </button>
+          {canGeneratePdf && (
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={!canGenerate || generatePdf.isPending}
+              onClick={handleGenerate}
+            >
+              {generatePdf.isPending ? "Gerando..." : "Gerar relatório"}
+            </button>
+          )}
         </div>
       </div>
 

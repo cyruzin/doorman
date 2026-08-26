@@ -12,3 +12,13 @@ export async function findClaimedUnits(units: string[], excludeOwnerId?: string)
   });
   return claimed.map((c) => c.unit);
 }
+
+// Every unit already owned by another active owner, with who owns it — lets the picker
+// grey those out up front and explain why in a tooltip.
+export async function getAllClaimedUnits(excludeOwnerId?: string): Promise<Record<string, string>> {
+  const claimed = await prisma.ownerUnit.findMany({
+    where: { owner: { active: true, ...(excludeOwnerId ? { id: { not: excludeOwnerId } } : {}) } },
+    select: { unit: true, owner: { select: { name: true } } },
+  });
+  return Object.fromEntries(claimed.map((c) => [c.unit, c.owner.name]));
+}

@@ -1,19 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { getFloors, getUnitNumber, getUnitsPerFloor, MAX_UNITS_PER_FLOOR } from "@/lib/building";
+import { getFloorFromUnit, getFloors, getUnitNumber, getUnitsPerFloor, MAX_UNITS_PER_FLOOR } from "@/lib/building";
 import styles from "./apartment-grid.module.css";
 
 interface ApartmentGridProps {
   selectedUnit: string | null;
   onSelect: (unit: string) => void;
+  /** Units with an active owner or resident, for a "Livre"/"Em uso" hint (color + tooltip).
+   * Omit — or leave undefined while still loading — to skip the hint entirely. */
+  occupiedUnits?: string[];
 }
 
-export function ApartmentGrid({ selectedUnit, onSelect }: ApartmentGridProps) {
+export function ApartmentGrid({ selectedUnit, onSelect, occupiedUnits }: ApartmentGridProps) {
   const floors = getFloors();
   const positions = Array.from({ length: MAX_UNITS_PER_FLOOR }, (_, i) => i + 1);
-  const [mobileFloor, setMobileFloor] = useState(1);
+  // Starts on the selected unit's floor so editing on mobile shows it selected, not floor 1.
+  const [mobileFloor, setMobileFloor] = useState(() => (selectedUnit ? getFloorFromUnit(selectedUnit) : 1));
   const mobileUnits = Array.from({ length: getUnitsPerFloor(mobileFloor) }, (_, i) => getUnitNumber(mobileFloor, i + 1));
+  const statusTooltip = (unit: string) => (occupiedUnits ? (occupiedUnits.includes(unit) ? "Em uso" : "Livre") : undefined);
 
   return (
     <>
@@ -39,13 +44,14 @@ export function ApartmentGrid({ selectedUnit, onSelect }: ApartmentGridProps) {
 
                   const unit = getUnitNumber(floor, position);
                   const isSelected = unit === selectedUnit;
+                  const className = isSelected
+                    ? `${styles.cell} ${styles.cellSelected}`
+                    : occupiedUnits
+                      ? `${styles.cell} ${occupiedUnits.includes(unit) ? styles.cellOccupied : styles.cellFree}`
+                      : styles.cell;
                   return (
-                    <td key={floor} className={styles.cellWrapper}>
-                      <button
-                        type="button"
-                        className={isSelected ? `${styles.cell} ${styles.cellSelected}` : styles.cell}
-                        onClick={() => onSelect(unit)}
-                      >
+                    <td key={floor} className={styles.cellWrapper} data-tooltip={statusTooltip(unit)}>
+                      <button type="button" className={className} onClick={() => onSelect(unit)}>
                         {unit}
                       </button>
                     </td>
@@ -79,11 +85,17 @@ export function ApartmentGrid({ selectedUnit, onSelect }: ApartmentGridProps) {
           <div className={styles.mobileUnits}>
             {mobileUnits.map((unit) => {
               const isSelected = unit === selectedUnit;
+              const className = isSelected
+                ? `${styles.mobileCell} ${styles.cellSelected}`
+                : occupiedUnits
+                  ? `${styles.mobileCell} ${occupiedUnits.includes(unit) ? styles.cellOccupied : styles.cellFree}`
+                  : styles.mobileCell;
               return (
                 <button
                   key={unit}
                   type="button"
-                  className={isSelected ? `${styles.mobileCell} ${styles.cellSelected}` : styles.mobileCell}
+                  className={className}
+                  data-tooltip={statusTooltip(unit)}
                   onClick={() => onSelect(unit)}
                 >
                   {unit}

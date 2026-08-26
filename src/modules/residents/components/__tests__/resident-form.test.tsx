@@ -1,23 +1,37 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { ConfirmProvider } from "@/components/confirm/confirm-provider";
 import { ResidentForm } from "../resident-form";
+import type { Resident } from "../../types";
 import type { UnitOccupancy } from "@/modules/apartments/types";
-import type { OwnerListResult } from "@/modules/owners/types";
 
-let occupancyData: UnitOccupancy | undefined = { owner: { id: "o1", name: "Owner Person", phones: [] }, residents: [] };
-let ownerSearchResult: OwnerListResult = { items: [], total: 0, page: 1, pageSize: 5 };
+// Either the same occupancy for any unit, or a per-unit lookup for tests where
+// different apartments need different owners/residents.
+let occupancyData: UnitOccupancy | ((unit: string) => UnitOccupancy) = {
+  owner: { id: "o1", name: "Owner Person", phones: [] },
+  residents: [],
+};
 
 vi.mock("@/modules/apartments/hooks/use-unit-occupancy", () => ({
-  useUnitOccupancy: (unit: string | null) => ({ data: unit ? occupancyData : undefined }),
+  useUnitOccupancy: (unit: string | null) => {
+    if (!unit) return { data: undefined };
+    return { data: typeof occupancyData === "function" ? occupancyData(unit) : occupancyData };
+  },
 }));
 
-vi.mock("@/modules/owners/hooks/use-owners", () => ({
-  useOwners: () => ({ data: ownerSearchResult }),
+let occupiedUnits: string[] | undefined;
+
+vi.mock("@/modules/apartments/hooks/use-occupied-units", () => ({
+  useOccupiedUnits: () => ({ data: occupiedUnits }),
 }));
 
-function renderForm(onSubmit = vi.fn()) {
-  render(<ResidentForm onSubmit={onSubmit} onCancel={vi.fn()} />);
+function renderForm(onSubmit = vi.fn(), defaultValues?: Resident) {
+  render(
+    <ConfirmProvider>
+      <ResidentForm onSubmit={onSubmit} onCancel={vi.fn()} defaultValues={defaultValues} />
+    </ConfirmProvider>,
+  );
   return onSubmit;
 }
 
@@ -31,100 +45,44 @@ function unitButton(unit: string) {
 describe("ResidentForm", () => {
   beforeEach(() => {
     occupancyData = { owner: { id: "o1", name: "Owner Person", phones: [] }, residents: [] };
-    ownerSearchResult = { items: [], total: 0, page: 1, pageSize: 5 };
+    occupiedUnits = undefined;
   });
 
-  it("shows plain name/cpf/email fields when É proprietário is off", () => {
+  it("shows plain name/cpf/email fields and no É proprietário switch before a unit is selected", () => {
     renderForm();
     expect(screen.getByLabelText("Nome")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Buscar proprietário por nome")).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "É proprietário" })).not.toBeInTheDocument();
   });
 
-  it("swaps to an owner search when É proprietário is toggled on, and disables submit until one is picked", async () => {
-    ownerSearchResult = {
-      items: [{ id: "o1", name: "Owner Person", cpf: "111", email: "owner@x.com" } as never],
-      total: 1,
-      page: 1,
-      pageSize: 5,
-    };
-    renderForm();
-
-    await userEvent.click(screen.getByRole("checkbox", { name: "É proprietário" }));
-
-    expect(screen.queryByLabelText("Nome")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Buscar proprietário por nome")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /salvar/i })).toBeDisabled();
-  });
-
-  it("shows no separate select — only the search input and its inline suggestions", async () => {
-    ownerSearchResult = {
-      items: [{ id: "o1", name: "Owner Person", cpf: "111", email: "owner@x.com" } as never],
-      total: 1,
-      page: 1,
-      pageSize: 5,
-    };
-    renderForm();
-
-    await userEvent.click(screen.getByRole("checkbox", { name: "É proprietário" }));
-    await userEvent.type(screen.getByLabelText("Buscar proprietário por nome"), "Owner");
-
-    expect(await screen.findByRole("option", { name: "Owner Person" })).toBeInTheDocument();
-    expect(screen.queryByLabelText("Proprietário")).not.toBeInTheDocument();
-  });
-
-  it("auto-fills name/cpf/email from the picked owner and enables submit", async () => {
-    ownerSearchResult = {
-      items: [{ id: "o1", name: "Owner Person", cpf: "11122233344", email: "owner@x.com" } as never],
-      total: 1,
-      page: 1,
-      pageSize: 5,
-    };
+  it("auto-links the unit's own registered owner when É proprietário is toggled on, and enables submit", async () => {
     const onSubmit = vi.fn();
     renderForm(onSubmit);
 
     await userEvent.click(unitButton("101"));
-    await userEvent.click(screen.getByRole("checkbox", { name: "É proprietário" }));
-    await userEvent.type(screen.getByLabelText("Buscar proprietário por nome"), "Owner");
-    await userEvent.click(await screen.findByRole("option", { name: "Owner Person" }));
+    await userEvent.click(await screen.findByRole("checkbox", { name: "É proprietário" }));
 
+    expect(screen.queryByLabelText("Nome")).not.toBeInTheDocument();
+    expect(screen.getByText("Owner Person")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /salvar/i })).toBeEnabled();
 
     await userEvent.click(screen.getByRole("button", { name: /salvar/i }));
 
     expect(onSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({ isOwner: true, ownerId: "o1", name: "Owner Person", cpf: "11122233344" }),
+      expect.objectContaining({ isOwner: true, ownerId: "o1", name: "Owner Person", unit: "101" }),
     );
   });
 
-  it("clears the owner link and re-opens suggestions when typing after a pick", async () => {
-    ownerSearchResult = {
-      items: [{ id: "o1", name: "Owner Person", cpf: "111", email: "owner@x.com" } as never],
-      total: 1,
-      page: 1,
-      pageSize: 5,
-    };
+  it("shows editable name/cpf/email fields again, cleared, when the toggle is switched back off", async () => {
     renderForm();
 
+    await userEvent.click(unitButton("101"));
+    await userEvent.click(await screen.findByRole("checkbox", { name: "É proprietário" }));
     await userEvent.click(screen.getByRole("checkbox", { name: "É proprietário" }));
-    await userEvent.type(screen.getByLabelText("Buscar proprietário por nome"), "Owner");
-    await userEvent.click(await screen.findByRole("option", { name: "Owner Person" }));
-    expect(screen.getByText("Selecionado")).toBeInTheDocument();
 
-    await userEvent.type(screen.getByLabelText("Buscar proprietário por nome"), " Two");
-    expect(screen.queryByText("Selecionado")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Nome")).toHaveValue("");
   });
 
-  it("shows editable name/cpf/email fields again when the toggle is switched back off", async () => {
-    renderForm();
-
-    await userEvent.click(screen.getByRole("checkbox", { name: "É proprietário" }));
-    await userEvent.click(screen.getByRole("checkbox", { name: "É proprietário" }));
-
-    expect(screen.getByLabelText("Nome")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Buscar proprietário por nome")).not.toBeInTheDocument();
-  });
-
-  it("shows an error and no schedule fields when the selected unit has no owner", async () => {
+  it("shows an error and no É proprietário switch when the selected unit has no owner", async () => {
     occupancyData = { owner: null, residents: [] };
     renderForm();
 
@@ -132,6 +90,7 @@ describe("ResidentForm", () => {
 
     expect(await screen.findByText(/não há proprietário cadastrado/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /salvar/i })).toBeDisabled();
+    expect(screen.queryByRole("checkbox", { name: "É proprietário" })).not.toBeInTheDocument();
   });
 
   it("hides the É proprietário switch when the unit already has an owner-resident", async () => {
@@ -152,29 +111,155 @@ describe("ResidentForm", () => {
       owner: { id: "o1", name: "Owner Person", phones: [] },
       residents: [{ id: "r1", name: "Lúcia", isOwner: true, phones: [] }],
     };
-    render(
-      <ResidentForm
-        defaultValues={{
-          id: "r1",
-          name: "Lúcia",
-          cpf: "111",
-          email: null,
-          unit: "101",
-          active: true,
-          isOwner: true,
-          ownerId: "o1",
-          owner: { id: "o1", name: "Owner Person" },
-          phones: [],
-          vehicles: [],
-          createdAt: "",
-          updatedAt: "",
-        }}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    renderForm(vi.fn(), {
+      id: "r1",
+      name: "Lúcia",
+      cpf: "111",
+      email: null,
+      unit: "101",
+      active: true,
+      isOwner: true,
+      ownerId: "o1",
+      owner: { id: "o1", name: "Owner Person" },
+      phones: [],
+      vehicles: [],
+      createdAt: "",
+      updatedAt: "",
+    });
 
     expect(await screen.findByRole("checkbox", { name: "É proprietário" })).toBeInTheDocument();
     expect(screen.queryByText(/já está cadastrado\(a\) como proprietário/i)).not.toBeInTheDocument();
+  });
+
+  it("asks for confirmation before moving an existing resident to a different unit", async () => {
+    const onSubmit = vi.fn();
+    renderForm(onSubmit, {
+      id: "r1",
+      name: "Lúcia",
+      cpf: "111",
+      email: null,
+      unit: "101",
+      active: true,
+      isOwner: false,
+      ownerId: null,
+      owner: null,
+      phones: [],
+      vehicles: [],
+      createdAt: "",
+      updatedAt: "",
+    });
+
+    await userEvent.click(unitButton("102"));
+    await userEvent.click(screen.getByRole("button", { name: /salvar/i }));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText(/mover lúcia do apartamento 101 para o apartamento 102/i)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Mover" }));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ unit: "102" }));
+  });
+
+  it("saves without confirmation when the unit is unchanged", async () => {
+    const onSubmit = vi.fn();
+    renderForm(onSubmit, {
+      id: "r1",
+      name: "Lúcia",
+      cpf: "111",
+      email: null,
+      unit: "101",
+      active: true,
+      isOwner: false,
+      ownerId: null,
+      owner: null,
+      phones: [],
+      vehicles: [],
+      createdAt: "",
+      updatedAt: "",
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: /salvar/i }));
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ unit: "101" }));
+  });
+
+  it("restores the É proprietário toggle after a detour to another unit and back to the resident's own", async () => {
+    occupancyData = (unit) =>
+      unit === "506"
+        ? { owner: { id: "o1", name: "Cyro Dubeux", phones: [] }, residents: [] }
+        : {
+            owner: { id: "o2", name: "Maria Lúcia", phones: [] },
+            residents: [{ id: "r2", name: "Maria Lúcia", isOwner: true, phones: [] }],
+          };
+
+    renderForm(vi.fn(), {
+      id: "r1",
+      name: "Cyro Dubeux",
+      cpf: "111",
+      email: null,
+      unit: "506",
+      active: true,
+      isOwner: true,
+      ownerId: "o1",
+      owner: { id: "o1", name: "Cyro Dubeux" },
+      phones: [],
+      vehicles: [],
+      createdAt: "",
+      updatedAt: "",
+    });
+
+    expect(await screen.findByRole("checkbox", { name: "É proprietário" })).toBeChecked();
+
+    await userEvent.click(unitButton("202"));
+    await screen.findByText(/maria lúcia já está cadastrado\(a\) como proprietário/i);
+    expect(screen.queryByRole("checkbox", { name: "É proprietário" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Nome")).toHaveValue("Cyro Dubeux");
+
+    await userEvent.click(unitButton("506"));
+    expect(await screen.findByRole("checkbox", { name: "É proprietário" })).toBeChecked();
+  });
+
+  it("hides (not just unchecks) the É proprietário switch when moving to a unit someone else already owns, even with no resident assigned there yet", async () => {
+    occupancyData = (unit) =>
+      unit === "506"
+        ? { owner: { id: "o1", name: "Cyro Dubeux", phones: [] }, residents: [] }
+        : { owner: { id: "o2", name: "Maria Lúcia", phones: [] }, residents: [] };
+
+    renderForm(vi.fn(), {
+      id: "r1",
+      name: "Cyro Dubeux",
+      cpf: "111",
+      email: null,
+      unit: "506",
+      active: true,
+      isOwner: true,
+      ownerId: "o1",
+      owner: { id: "o1", name: "Cyro Dubeux" },
+      phones: [],
+      vehicles: [],
+      createdAt: "",
+      updatedAt: "",
+    });
+
+    expect(await screen.findByRole("checkbox", { name: "É proprietário" })).toBeChecked();
+
+    await userEvent.click(unitButton("205"));
+
+    expect(await screen.findByText(/maria lúcia é o\(a\) proprietário\(a\) deste apartamento/i)).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "É proprietário" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Nome")).toHaveValue("Cyro Dubeux");
+  });
+
+  it("hints Livre/Em uso per unit once occupancy data has loaded", () => {
+    occupiedUnits = ["101"];
+    renderForm();
+
+    expect(unitButton("101").closest("td")).toHaveAttribute("data-tooltip", "Em uso");
+    expect(unitButton("102").closest("td")).toHaveAttribute("data-tooltip", "Livre");
+  });
+
+  it("shows no occupancy hint while occupied units haven't loaded yet", () => {
+    renderForm();
+
+    expect(unitButton("101").closest("td")).not.toHaveAttribute("data-tooltip");
   });
 });

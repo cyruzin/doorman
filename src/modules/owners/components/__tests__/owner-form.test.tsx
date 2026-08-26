@@ -1,7 +1,18 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { OwnerForm } from "../owner-form";
+
+let claimedUnits: Record<string, string> = {};
+let occupiedUnits: string[] | undefined;
+
+vi.mock("../../hooks/use-owners", () => ({
+  useClaimedUnits: () => ({ data: claimedUnits }),
+}));
+
+vi.mock("@/modules/apartments/hooks/use-occupied-units", () => ({
+  useOccupiedUnits: () => ({ data: occupiedUnits }),
+}));
 
 // The grid renders both a desktop table and a mobile floor-first picker at
 // once (CSS hides one via a media query JSDOM doesn't evaluate) — the first
@@ -11,6 +22,11 @@ function unitButton(unit: string) {
 }
 
 describe("OwnerForm", () => {
+  beforeEach(() => {
+    claimedUnits = {};
+    occupiedUnits = undefined;
+  });
+
   it("starts with no apartment selected", () => {
     render(<OwnerForm onSubmit={vi.fn()} onCancel={vi.fn()} />);
     expect(screen.getByText("Nenhum apartamento selecionado.")).toBeInTheDocument();
@@ -79,5 +95,30 @@ describe("OwnerForm", () => {
     expect(screen.getByText("Apartamentos: 101, 302")).toBeInTheDocument();
     expect(unitButton("101")).toHaveAttribute("aria-pressed", "true");
     expect(unitButton("302")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("blocks and names the owner in a tooltip for units already claimed by someone else", async () => {
+    claimedUnits = { "205": "Maria Lúcia" };
+    render(<OwnerForm onSubmit={vi.fn()} onCancel={vi.fn()} />);
+
+    expect(unitButton("205").closest("td")).toHaveAttribute("data-tooltip", "Maria Lúcia é o proprietário");
+    await userEvent.click(unitButton("205"));
+    expect(screen.getByText("Nenhum apartamento selecionado.")).toBeInTheDocument();
+  });
+
+  it("hints Livre/Em uso on units not claimed by someone else, once occupancy data has loaded", () => {
+    occupiedUnits = ["101"];
+    render(<OwnerForm onSubmit={vi.fn()} onCancel={vi.fn()} />);
+
+    expect(unitButton("101").closest("td")).toHaveAttribute("data-tooltip", "Em uso");
+    expect(unitButton("102").closest("td")).toHaveAttribute("data-tooltip", "Livre");
+  });
+
+  it("keeps the claimed tooltip and styling untouched even once occupancy data has loaded", () => {
+    claimedUnits = { "205": "Maria Lúcia" };
+    occupiedUnits = ["205"];
+    render(<OwnerForm onSubmit={vi.fn()} onCancel={vi.fn()} />);
+
+    expect(unitButton("205").closest("td")).toHaveAttribute("data-tooltip", "Maria Lúcia é o proprietário");
   });
 });

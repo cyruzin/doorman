@@ -64,6 +64,7 @@ describe("NoticesPage", () => {
   it("creates a notice with showOnHome off by default", async () => {
     renderPage();
 
+    await userEvent.click(screen.getByRole("button", { name: "Novo recado" }));
     await userEvent.type(screen.getByLabelText("Novo recado"), "Interfone travando");
     await userEvent.click(screen.getByRole("button", { name: /enviar recado/i }));
 
@@ -75,6 +76,7 @@ describe("NoticesPage", () => {
   it("creates a notice with showOnHome on when the toggle is checked", async () => {
     renderPage();
 
+    await userEvent.click(screen.getByRole("button", { name: "Novo recado" }));
     await userEvent.type(screen.getByLabelText("Novo recado"), "Aviso pro próximo plantão");
     await userEvent.click(screen.getByLabelText("Exibir no início"));
     await userEvent.click(screen.getByRole("button", { name: /enviar recado/i }));
@@ -117,6 +119,23 @@ describe("NoticesPage", () => {
     renderPage();
 
     expect(screen.queryByRole("button", { name: "Excluir" })).not.toBeInTheDocument();
+  });
+
+  it("shows the listing and filters by default, hiding them while creating", async () => {
+    renderPage();
+
+    expect(screen.getByText("Filtrar por período")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Novo recado")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Novo recado" }));
+
+    expect(screen.queryByText("Filtrar por período")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Novo recado")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.getByText("Filtrar por período")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Novo recado")).not.toBeInTheDocument();
   });
 
   it("labels the date range as a filter", () => {

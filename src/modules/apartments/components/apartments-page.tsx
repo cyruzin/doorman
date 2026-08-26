@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
+import { useOccupiedUnits } from "../hooks/use-occupied-units";
 import { ApartmentGrid } from "./apartment-grid";
 import { ApartmentDetail } from "./apartment-detail";
 import styles from "./apartments-page.module.css";
@@ -9,6 +10,7 @@ import styles from "./apartments-page.module.css";
 export function ApartmentsPage() {
   const { can } = usePermissions();
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
+  const { data: occupiedUnits } = useOccupiedUnits();
 
   const canView = can("residents", "read") || can("owners", "read");
 
@@ -23,7 +25,7 @@ export function ApartmentsPage() {
   return (
     <div className="page">
       <h1 className={styles.title}>Apartamentos</h1>
-      <ApartmentGrid selectedUnit={selectedUnit} onSelect={setSelectedUnit} />
+      <ApartmentGrid selectedUnit={selectedUnit} onSelect={setSelectedUnit} occupiedUnits={occupiedUnits} />
       {selectedUnit && <ApartmentDetail unit={selectedUnit} />}
     </div>
   );

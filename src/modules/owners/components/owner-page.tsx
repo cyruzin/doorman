@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { SearchInput } from "@/components/search-input/search-input";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Pagination } from "@/components/pagination/pagination";
-import { useCreateOwner, useDeleteOwner, useOwnerDetail, useOwners, useUpdateOwner } from "../hooks/use-owners";
+import { useCreateOwner, useDeleteOwner, useOwners, useUpdateOwner } from "../hooks/use-owners";
 import type { Owner, OwnerInput, OwnerStatusFilter } from "../types";
 import { OwnerForm } from "./owner-form";
 import { OwnerTable } from "./owner-table";
@@ -20,11 +20,13 @@ interface OwnerPageProps {
    * button can live next to the tab switcher. */
   isCreating: boolean;
   onCreatingChange: (value: boolean) => void;
-  /** Opens the edit form for this id on mount (e.g. deep-linked from the Apartments detail panel). */
-  initialEditId: string | null;
+  /** Seeds the search box (e.g. deep-linked from the Apartments detail panel). */
+  initialSearch: string | null;
+  /** Reports whether an edit form is open, so the parent header can reflect it. */
+  onEditingChange?: (editing: boolean) => void;
 }
 
-export function OwnerPage({ isCreating, onCreatingChange, initialEditId }: OwnerPageProps) {
+export function OwnerPage({ isCreating, onCreatingChange, initialSearch, onEditingChange }: OwnerPageProps) {
   const { can } = usePermissions();
   const { showToast } = useToast();
   const requestConfirm = useConfirm();
@@ -33,7 +35,7 @@ export function OwnerPage({ isCreating, onCreatingChange, initialEditId }: Owner
   const canUpdate = can("owners", "update");
   const canDelete = can("owners", "delete");
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch ?? "");
   const [status, setStatus] = useState<OwnerStatusFilter>("active");
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebouncedValue(search);
@@ -50,20 +52,18 @@ export function OwnerPage({ isCreating, onCreatingChange, initialEditId }: Owner
   const updateOwner = useUpdateOwner();
   const deleteOwner = useDeleteOwner();
 
-  // `editing` comes from the table row or a deep-linked ?editId= (fetched via useOwnerDetail).
   const [manualEditing, setManualEditing] = useState<Owner | null>(null);
-  const [dismissedDeepLink, setDismissedDeepLink] = useState(false);
-  const detailQuery = useOwnerDetail(dismissedDeepLink ? null : initialEditId);
-  const editing = isCreating ? null : (manualEditing ?? (dismissedDeepLink ? null : detailQuery.data ?? null));
+  const editing = isCreating ? null : manualEditing;
+
+  useEffect(() => {
+    onEditingChange?.(!!editing);
+  }, [editing, onEditingChange]);
 
   if (!canRead) {
     return <p className="text-muted">Você não tem permissão para acessar os proprietários.</p>;
   }
 
-  const closeEditing = () => {
-    setManualEditing(null);
-    setDismissedDeepLink(true);
-  };
+  const closeEditing = () => setManualEditing(null);
 
   const handleEdit = (owner: Owner) => {
     onCreatingChange(false);
@@ -156,39 +156,43 @@ export function OwnerPage({ isCreating, onCreatingChange, initialEditId }: Owner
         </div>
       )}
 
-      <div className={styles.filters}>
-        <SearchInput
-          className="search-bar"
-          placeholder="Buscar proprietário por nome..."
-          value={search}
-          onChange={handleSearchChange}
-          aria-label="Buscar proprietário"
-        />
-        <select
-          className="input"
-          value={status}
-          onChange={(e) => handleStatusChange(e.target.value as OwnerStatusFilter)}
-          aria-label="Filtrar por status"
-        >
-          <option value="active">Ativos</option>
-          <option value="inactive">Inativos</option>
-          <option value="all">Todos</option>
-        </select>
-      </div>
-
-      {isLoading ? (
-        <p>Carregando...</p>
-      ) : (
+      {!isCreating && !editing && (
         <>
-          <OwnerTable
-            items={owners}
-            canUpdate={canUpdate}
-            canDelete={canDelete}
-            onEdit={handleEdit}
-            onToggleActive={handleToggleActive}
-            onDelete={handleDelete}
-          />
-          <Pagination page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPageChange={setPage} />
+          <div className={styles.filters}>
+            <SearchInput
+              className="search-bar"
+              placeholder="Buscar proprietário por nome..."
+              value={search}
+              onChange={handleSearchChange}
+              aria-label="Buscar proprietário"
+            />
+            <select
+              className="input"
+              value={status}
+              onChange={(e) => handleStatusChange(e.target.value as OwnerStatusFilter)}
+              aria-label="Filtrar por status"
+            >
+              <option value="active">Ativos</option>
+              <option value="inactive">Inativos</option>
+              <option value="all">Todos</option>
+            </select>
+          </div>
+
+          {isLoading ? (
+            <p>Carregando...</p>
+          ) : (
+            <>
+              <OwnerTable
+                items={owners}
+                canUpdate={canUpdate}
+                canDelete={canDelete}
+                onEdit={handleEdit}
+                onToggleActive={handleToggleActive}
+                onDelete={handleDelete}
+              />
+              <Pagination page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPageChange={setPage} />
+            </>
+          )}
         </>
       )}
     </div>

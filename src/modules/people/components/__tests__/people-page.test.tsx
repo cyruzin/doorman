@@ -1,15 +1,19 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 let ownersTotal = 0;
+let urlSearchParams = new URLSearchParams();
+const routerReplace = vi.fn();
 
 vi.mock("next-auth/react", () => ({
   useSession: () => ({ data: { user: { id: "1", name: "admin", role: "ADMIN" } } }),
 }));
 
 vi.mock("next/navigation", () => ({
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => urlSearchParams,
+  useRouter: () => ({ replace: routerReplace }),
+  usePathname: () => "/residents",
 }));
 
 vi.mock("@/modules/permissions/hooks/use-permissions", () => ({
@@ -31,6 +35,11 @@ vi.mock("@/modules/owners/hooks/use-owners", () => ({
 import { PeoplePage } from "../people-page";
 
 describe("PeoplePage", () => {
+  beforeEach(() => {
+    urlSearchParams = new URLSearchParams();
+    routerReplace.mockClear();
+  });
+
   it("defaults to the Proprietários tab, since owners take priority over residents", () => {
     ownersTotal = 0;
     render(<PeoplePage />);
@@ -69,5 +78,19 @@ describe("PeoplePage", () => {
 
     expect(screen.getByRole("button", { name: /novo proprietário/i })).toBeEnabled();
     expect(screen.queryByText(/cadastre um proprietário/i)).not.toBeInTheDocument();
+  });
+
+  it("strips a deep-linked q from the URL after seeding, keeping the other params", () => {
+    urlSearchParams = new URLSearchParams("kind=resident&q=Maria+L%C3%BAcia");
+    render(<PeoplePage />);
+
+    expect(routerReplace).toHaveBeenCalledWith("/residents?kind=resident", { scroll: false });
+  });
+
+  it("does not touch the URL when there is no q to strip", () => {
+    urlSearchParams = new URLSearchParams("kind=resident");
+    render(<PeoplePage />);
+
+    expect(routerReplace).not.toHaveBeenCalled();
   });
 });
