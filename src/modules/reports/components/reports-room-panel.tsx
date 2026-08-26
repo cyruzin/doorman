@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SearchInput } from "@/components/search-input/search-input";
 import { useToast } from "@/components/toast/toast-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Pagination } from "@/components/pagination/pagination";
@@ -122,14 +123,12 @@ export function ReportsRoomPanel({ room }: ReportsRoomPanelProps) {
         <div className={styles.filterRow}>
           <div className="form-field">
             <label htmlFor="reportUnitSearch">Pesquisa</label>
-            <input
+            <SearchInput
               id="reportUnitSearch"
-              type="search"
-              className="input"
               placeholder="Pesquise por apto..."
               value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
+              onChange={(value) => {
+                setSearch(value);
                 setPage(1);
               }}
             />

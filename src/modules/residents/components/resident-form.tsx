@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { residentSchema, type ResidentInput } from "@/lib/validations/resident";
+import { SearchInput } from "@/components/search-input/search-input";
 import { maskCpf, maskPhone, unmask } from "@/lib/helpers/masks";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useUnitOccupancy } from "@/modules/apartments/hooks/use-unit-occupancy";
@@ -153,13 +154,11 @@ export function ResidentForm({ defaultValues, onSubmit, onCancel, submitLabel = 
         <div className="form-grid" key="owner-fields">
           <div className="form-field">
             <label htmlFor="ownerQuery">Buscar proprietário por nome</label>
-            <input
+            <SearchInput
               id="ownerQuery"
-              type="search"
-              className="input"
               autoComplete="off"
               value={ownerQuery}
-              onChange={(e) => handleOwnerQueryChange(e.target.value)}
+              onChange={handleOwnerQueryChange}
               placeholder="Digite o nome do proprietário..."
             />
             {ownerId ? (

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
+import { SearchInput } from "@/components/search-input/search-input";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -159,12 +160,11 @@ export function OwnerPage({ isCreating, onCreatingChange, initialEditId }: Owner
       )}
 
       <div className={styles.filters}>
-        <input
-          type="search"
-          className="input search-bar"
+        <SearchInput
+          className="search-bar"
           placeholder="Buscar proprietário por nome..."
           value={search}
-          onChange={(e) => handleSearchChange(e.target.value)}
+          onChange={handleSearchChange}
           aria-label="Buscar proprietário"
         />
         <select
