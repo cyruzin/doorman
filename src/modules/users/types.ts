@@ -1,8 +1,10 @@
 import { z } from "zod";
 import type { Role } from "@/generated/prisma/enums";
+import { usernameSchema } from "@/lib/validations/user";
 
 export const userFormSchema = z.object({
-  username: z.string().min(3, "Usuário deve ter ao menos 3 caracteres"),
+  name: z.string().min(1, "Nome é obrigatório"),
+  username: usernameSchema,
   password: z
     .string()
     .min(6, "Senha deve ter ao menos 6 caracteres")
@@ -15,6 +17,7 @@ export type UserFormValues = z.infer<typeof userFormSchema>;
 
 export interface AppUser {
   id: string;
+  name: string;
   username: string;
   role: Role;
   isSuperAdmin: boolean;
@@ -22,6 +25,7 @@ export interface AppUser {
 }
 
 export interface UserInput {
+  name: string;
   username: string;
   password: string;
   role: Role;

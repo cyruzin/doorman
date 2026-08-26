@@ -37,10 +37,9 @@ export function MainNav() {
   const [isOpen, setIsOpen] = useState(false);
 
   const role = session?.user?.role;
-  const username = session?.user?.name ?? "";
-  // The username often doubles as the porteiro's real name ("Raimundo Gomes") —
-  // the header chip only has room for a first name.
-  const displayName = username.trim().split(/\s+/)[0] ?? username;
+  const name = session?.user?.name ?? "";
+  // The header chip only has room for a first name.
+  const displayName = name.trim().split(/\s+/)[0] ?? name;
 
   const closeMenu = () => setIsOpen(false);
 
@@ -84,7 +83,7 @@ export function MainNav() {
           {session?.user && (
             <div className="main-nav-user-chip">
               <span className="main-nav-user-avatar" aria-hidden="true">
-                {username.charAt(0).toUpperCase()}
+                {name.charAt(0).toUpperCase()}
               </span>
               <span className="main-nav-user">{displayName}</span>
             </div>

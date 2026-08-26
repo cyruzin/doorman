@@ -5,7 +5,7 @@ import { requirePermission } from "@/lib/api-guard";
 import { userUpdateSchema } from "@/lib/validations/user";
 
 const SALT_ROUNDS = 10;
-const userSelect = { id: true, username: true, role: true, isSuperAdmin: true, createdAt: true } as const;
+const userSelect = { id: true, name: true, username: true, role: true, isSuperAdmin: true, createdAt: true } as const;
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -41,8 +41,19 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     ? { ...rest, passwordHash: await bcrypt.hash(password, SALT_ROUNDS) }
     : rest;
 
-  const updated = await prisma.user.update({ where: { id }, data, select: userSelect });
-  return NextResponse.json(updated);
+  try {
+    const updated = await prisma.user.update({ where: { id }, data, select: userSelect });
+    return NextResponse.json(updated);
+  } catch (err) {
+    if (isUniqueUsernameViolation(err)) {
+      return NextResponse.json({ error: "Já existe um usuário com esse nome de usuário" }, { status: 400 });
+    }
+    throw err;
+  }
+}
+
+function isUniqueUsernameViolation(err: unknown): boolean {
+  return err instanceof Error && "code" in err && (err as { code?: string }).code === "P2002";
 }
 
 export async function DELETE(_req: NextRequest, { params }: RouteParams) {

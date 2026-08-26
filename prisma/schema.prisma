@@ -26,6 +26,9 @@ enum SchedulingRoom {
 
 model User {
   id           String   @id @default(cuid())
+  // The person's real name — shown throughout the UI (nav chip, audit trails
+  // like "finalizado por"). username is only the login handle.
+  name         String
   username     String   @unique
   passwordHash String
   role         Role     @default(DOORMAN)

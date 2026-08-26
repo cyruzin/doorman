@@ -38,6 +38,7 @@ describe("UsersPage", () => {
     renderUsersPage();
 
     await userEvent.click(screen.getByRole("button", { name: /novo usuário/i }));
+    await userEvent.type(screen.getByLabelText(/^nome$/i), "Porteiro Dois");
     await userEvent.type(screen.getByLabelText(/^usuário$/i), "porteiro2");
     await userEvent.click(screen.getByRole("button", { name: /^criar$/i }));
 
@@ -47,16 +48,33 @@ describe("UsersPage", () => {
     expect(mutateAsyncCreate).not.toHaveBeenCalled();
   });
 
+  it("blocks a username with spaces or uppercase letters", async () => {
+    renderUsersPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /novo usuário/i }));
+    await userEvent.type(screen.getByLabelText(/^nome$/i), "Porteiro Dois");
+    await userEvent.type(screen.getByLabelText(/^usuário$/i), "Porteiro Dois");
+    await userEvent.type(screen.getByLabelText(/senha/i), "senha123");
+    await userEvent.click(screen.getByRole("button", { name: /^criar$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/apenas letras minúsculas/i)).toBeInTheDocument();
+    });
+    expect(mutateAsyncCreate).not.toHaveBeenCalled();
+  });
+
   it("creates a user once a password is provided", async () => {
     renderUsersPage();
 
     await userEvent.click(screen.getByRole("button", { name: /novo usuário/i }));
+    await userEvent.type(screen.getByLabelText(/^nome$/i), "Porteiro Dois");
     await userEvent.type(screen.getByLabelText(/^usuário$/i), "porteiro2");
     await userEvent.type(screen.getByLabelText(/senha/i), "senha123");
     await userEvent.click(screen.getByRole("button", { name: /^criar$/i }));
 
     await waitFor(() => {
       expect(mutateAsyncCreate).toHaveBeenCalledWith({
+        name: "Porteiro Dois",
         username: "porteiro2",
         password: "senha123",
         role: "DOORMAN",

@@ -5,6 +5,7 @@ import type { AppUser } from "../types";
 
 const superAdmin: AppUser = {
   id: "1",
+  name: "Admin",
   username: "admin",
   role: "ADMIN",
   isSuperAdmin: true,
@@ -13,6 +14,7 @@ const superAdmin: AppUser = {
 
 const regularAdmin: AppUser = {
   id: "2",
+  name: "Outro Admin",
   username: "outro-admin",
   role: "ADMIN",
   isSuperAdmin: false,

@@ -6,17 +6,17 @@ import { userCreateSchema } from "@/lib/validations/user";
 import { parsePagination, type PaginatedResult } from "@/lib/pagination";
 
 const SALT_ROUNDS = 10;
-const userSelect = { id: true, username: true, role: true, isSuperAdmin: true, createdAt: true } as const;
+const userSelect = { id: true, name: true, username: true, role: true, isSuperAdmin: true, createdAt: true } as const;
 
 export async function GET(req: NextRequest) {
   const { error } = await requirePermission("users", "read");
   if (error) return error;
 
   const { q, page, pageSize, skip } = parsePagination(req);
-  const where = q ? { username: { contains: q } } : undefined;
+  const where = q ? { OR: [{ name: { contains: q } }, { username: { contains: q } }] } : undefined;
 
   const [items, total] = await Promise.all([
-    prisma.user.findMany({ where, select: userSelect, orderBy: { username: "asc" }, skip, take: pageSize }),
+    prisma.user.findMany({ where, select: userSelect, orderBy: { name: "asc" }, skip, take: pageSize }),
     prisma.user.count({ where }),
   ]);
 
@@ -32,13 +32,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { username, password, role } = parsed.data;
+  const { name, username, password, role } = parsed.data;
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-  const user = await prisma.user.create({
-    data: { username, passwordHash, role },
-    select: userSelect,
-  });
+  try {
+    const user = await prisma.user.create({
+      data: { name, username, passwordHash, role },
+      select: userSelect,
+    });
+    return NextResponse.json(user, { status: 201 });
+  } catch (err) {
+    if (isUniqueUsernameViolation(err)) {
+      return NextResponse.json({ error: "Já existe um usuário com esse nome de usuário" }, { status: 400 });
+    }
+    throw err;
+  }
+}
 
-  return NextResponse.json(user, { status: 201 });
+function isUniqueUsernameViolation(err: unknown): boolean {
+  return err instanceof Error && "code" in err && (err as { code?: string }).code === "P2002";
 }

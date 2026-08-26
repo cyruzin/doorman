@@ -21,7 +21,7 @@ function formatTimestamp(iso: string): string {
 export function NoticesPage() {
   const { data: session } = useSession();
   const role = session?.user?.role;
-  const username = session?.user?.name ?? "";
+  const currentUserName = session?.user?.name ?? "";
   const { showToast } = useToast();
   const requestConfirm = useConfirm();
 
@@ -57,7 +57,7 @@ export function NoticesPage() {
   // Nobody can remove a system-generated note; a doorman may only remove
   // their own manual ones, while an admin can remove any manual one.
   const canDeleteNotice = (notice: Notice) =>
-    canDelete && !notice.isAutomatic && (role === "ADMIN" || notice.authorUsername === username);
+    canDelete && !notice.isAutomatic && (role === "ADMIN" || notice.authorUsername === currentUserName);
 
   const handleSubmit = async () => {
     if (!message.trim()) return;

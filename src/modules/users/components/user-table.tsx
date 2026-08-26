@@ -21,6 +21,7 @@ export function UserTable({ items, canUpdate, canDelete, onEdit, onDelete }: Use
       <table>
         <thead>
           <tr>
+            <th>Nome</th>
             <th>Usuário</th>
             <th>Perfil</th>
             {(canUpdate || canDelete) && <th aria-label="Ações" />}
@@ -29,6 +30,7 @@ export function UserTable({ items, canUpdate, canDelete, onEdit, onDelete }: Use
         <tbody>
           {items.map((user) => (
             <tr key={user.id}>
+              <td>{user.name}</td>
               <td>{user.username}</td>
               <td>
                 <span className="badge badge-info">{user.role === "ADMIN" ? "Administrador" : "Porteiro"}</span>

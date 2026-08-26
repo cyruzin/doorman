@@ -63,7 +63,7 @@ export function UsersPage() {
       return;
     }
     try {
-      await createUser.mutateAsync({ username: data.username, password: data.password, role: data.role });
+      await createUser.mutateAsync({ name: data.name, username: data.username, password: data.password, role: data.role });
       showToast("Usuário criado com sucesso", "success");
       setIsCreating(false);
     } catch {
@@ -76,7 +76,7 @@ export function UsersPage() {
     try {
       const payload = data.password
         ? data
-        : { username: data.username, role: data.role };
+        : { name: data.name, username: data.username, role: data.role };
       await updateUser.mutateAsync({ id: editing.id, data: payload });
       showToast("Usuário atualizado com sucesso", "success");
       setEditing(null);
@@ -98,7 +98,7 @@ export function UsersPage() {
       },
       {
         title: "Excluir usuário",
-        description: `Remover o usuário ${user.username}? Essa ação não pode ser desfeita.`,
+        description: `Remover o usuário ${user.name}? Essa ação não pode ser desfeita.`,
       },
     );
   };

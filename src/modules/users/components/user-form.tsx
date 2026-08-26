@@ -19,7 +19,7 @@ export function UserForm({ defaultValues, onSubmit, onCancel, submitLabel = "Sal
   } = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
     defaultValues: defaultValues
-      ? { username: defaultValues.username, role: defaultValues.role, password: "" }
+      ? { name: defaultValues.name, username: defaultValues.username, role: defaultValues.role, password: "" }
       : { role: "DOORMAN", password: "" },
   });
 
@@ -27,9 +27,20 @@ export function UserForm({ defaultValues, onSubmit, onCancel, submitLabel = "Sal
     <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
       <div className="form-grid">
         <div className="form-field">
+          <label htmlFor="name">Nome</label>
+          <input id="name" className="input" {...register("name")} />
+          {errors.name && <span className="field-error">{errors.name.message}</span>}
+        </div>
+
+        <div className="form-field">
           <label htmlFor="username">Usuário</label>
           <input id="username" className="input" {...register("username")} />
-          {errors.username && <span className="field-error">{errors.username.message}</span>}
+          {errors.username && (
+            <span className="field-error">{errors.username.message}</span>
+          )}
+          {!errors.username && (
+            <span className="text-muted">Apenas letras minúsculas, números, hífen e underscore.</span>
+          )}
         </div>
 
         <div className="form-field">
