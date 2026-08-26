@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/api-guard";
-import { can } from "@/lib/permissions";
+import { can } from "@/lib/permissions-db";
 import { residentUpdateSchema } from "@/lib/validations/resident";
 import { contactNestedWrites } from "@/lib/contact-writes";
 import { resolveResidentOwner } from "@/lib/resident-owner";
@@ -36,7 +36,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   // Activating/deactivating is the soft-delete equivalent — same permission as delete.
   // The edit form always resubmits the resident's current `active` value even when
   // untouched, so only gate on an actual transition, not mere presence in the payload.
-  if (parsed.data.active !== undefined && current.active !== parsed.data.active && !can(session.user.role, "residents", "delete")) {
+  if (parsed.data.active !== undefined && current.active !== parsed.data.active && !(await can(session.user.role, "residents", "delete"))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -12,6 +12,10 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+vi.mock("@/modules/permissions/hooks/use-permissions", () => ({
+  usePermissions: () => ({ can: () => true }),
+}));
+
 vi.mock("@/modules/owners/components/owner-page", () => ({
   OwnerPage: () => <div data-testid="owner-page" />,
 }));

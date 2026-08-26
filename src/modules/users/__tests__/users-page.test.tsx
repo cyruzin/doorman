@@ -10,6 +10,10 @@ vi.mock("next-auth/react", () => ({
   useSession: () => ({ data: { user: { id: "1", name: "admin", role: "ADMIN" } } }),
 }));
 
+vi.mock("@/modules/permissions/hooks/use-permissions", () => ({
+  usePermissions: () => ({ can: () => true }),
+}));
+
 vi.mock("../hooks/use-users", () => ({
   useUsers: () => ({ data: { items: [], total: 0, page: 1, pageSize: 20 }, isLoading: false }),
   useCreateUser: () => ({ mutateAsync: mutateAsyncCreate }),

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/api-guard";
-import { can } from "@/lib/permissions";
+import { can } from "@/lib/permissions-db";
 import { ownerUpdateSchema } from "@/lib/validations/owner";
 import { contactNestedWrites } from "@/lib/contact-writes";
 import { findClaimedUnits } from "@/lib/owner-units";
@@ -48,7 +48,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   // Activating/deactivating is the soft-delete equivalent — same permission as delete.
-  if (parsed.data.active !== undefined && current.active !== parsed.data.active && !can(session.user.role, "owners", "delete")) {
+  if (parsed.data.active !== undefined && current.active !== parsed.data.active && !(await can(session.user.role, "owners", "delete"))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

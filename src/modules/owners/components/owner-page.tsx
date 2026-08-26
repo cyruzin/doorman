@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { can } from "@/lib/permissions";
+import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -25,14 +24,13 @@ interface OwnerPageProps {
 }
 
 export function OwnerPage({ isCreating, onCreatingChange, initialEditId }: OwnerPageProps) {
-  const { data: session } = useSession();
-  const role = session?.user?.role;
+  const { can } = usePermissions();
   const { showToast } = useToast();
   const requestConfirm = useConfirm();
 
-  const canRead = !!role && can(role, "owners", "read");
-  const canUpdate = !!role && can(role, "owners", "update");
-  const canDelete = !!role && can(role, "owners", "delete");
+  const canRead = can("owners", "read");
+  const canUpdate = can("owners", "update");
+  const canDelete = can("owners", "delete");
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<OwnerStatusFilter>("active");

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { can, type Action, type Resource } from "@/lib/permissions";
+import type { Action, Resource } from "@/lib/permissions";
+import { can } from "@/lib/permissions-db";
 
 export async function requirePermission(resource: Resource, action: Action) {
   const session = await auth();
@@ -12,7 +13,7 @@ export async function requirePermission(resource: Resource, action: Action) {
     } as const;
   }
 
-  if (!can(session.user.role, resource, action)) {
+  if (!(await can(session.user.role, resource, action))) {
     return {
       session: null,
       error: NextResponse.json({ error: "Forbidden" }, { status: 403 }),

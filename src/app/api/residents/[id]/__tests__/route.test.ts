@@ -22,6 +22,11 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
+const can = vi.fn();
+vi.mock("@/lib/permissions-db", () => ({
+  can: (...args: unknown[]) => can(...args),
+}));
+
 import { PATCH } from "../route";
 
 function params(id: string) {
@@ -43,10 +48,13 @@ describe("PATCH /api/residents/[id]", () => {
     update.mockReset();
     residentFindFirst.mockReset();
     ownerUnitFindFirst.mockReset();
+    can.mockReset();
+    can.mockResolvedValue(true);
   });
 
   it("blocks a DOORMAN from actually flipping active status", async () => {
     requirePermission.mockResolvedValue({ session: { user: { role: "DOORMAN" } }, error: null });
+    can.mockResolvedValue(false);
     findUnique.mockResolvedValue({ active: true, unit: "101", isOwner: false });
 
     const res = await PATCH(patchRequest({ active: false }), params("r1"));

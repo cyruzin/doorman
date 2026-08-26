@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { can } from "@/lib/permissions";
+import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { SCHEDULING_ROOMS, ROOM_LABELS, type SchedulingRoom } from "../types";
 import { CinemaIcon, GrillIcon, PartyHallIcon } from "./room-icons";
 import { SchedulingRoomPanel } from "./scheduling-room-panel";
@@ -16,8 +15,7 @@ const ROOM_ICONS: Record<SchedulingRoom, typeof PartyHallIcon> = {
 };
 
 export function SchedulingPage() {
-  const { data: session } = useSession();
-  const role = session?.user?.role;
+  const { can } = usePermissions();
   const searchParams = useSearchParams();
 
   // Deep-linked from the dashboard's capacity/upcoming-events cards, e.g. /scheduling?room=GRILL.
@@ -26,7 +24,7 @@ export function SchedulingPage() {
     SCHEDULING_ROOMS.includes(urlRoom as SchedulingRoom) ? (urlRoom as SchedulingRoom) : "PARTY_HALL",
   );
 
-  const canView = !!role && can(role, "scheduling", "read");
+  const canView = can("scheduling", "read");
 
   if (!canView) {
     return (

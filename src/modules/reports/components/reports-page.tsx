@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { can } from "@/lib/permissions";
+import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { CinemaIcon, GrillIcon, PartyHallIcon } from "@/modules/scheduling/components/room-icons";
 import { REPORT_ROOMS, ROOM_LABELS, type ReportRoom } from "../types";
 import { ReportsRoomPanel } from "./reports-room-panel";
@@ -15,11 +14,10 @@ const ROOM_ICONS: Record<ReportRoom, typeof PartyHallIcon> = {
 };
 
 export function ReportsPage() {
-  const { data: session } = useSession();
-  const role = session?.user?.role;
+  const { can } = usePermissions();
   const [room, setRoom] = useState<ReportRoom>("PARTY_HALL");
 
-  const canView = !!role && can(role, "reports", "read");
+  const canView = can("reports", "read");
 
   if (!canView) {
     return (

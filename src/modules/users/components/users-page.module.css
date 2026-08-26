@@ -5,3 +5,7 @@
 .formCard {
   padding: var(--space-5);
 }
+
+.tabs {
+  align-self: flex-start;
+}

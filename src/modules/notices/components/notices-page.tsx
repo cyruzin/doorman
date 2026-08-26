@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { can } from "@/lib/permissions";
+import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { Pagination } from "@/components/pagination/pagination";
@@ -22,12 +22,13 @@ export function NoticesPage() {
   const { data: session } = useSession();
   const role = session?.user?.role;
   const currentUserName = session?.user?.name ?? "";
+  const { can } = usePermissions();
   const { showToast } = useToast();
   const requestConfirm = useConfirm();
 
-  const canRead = !!role && can(role, "notices", "read");
-  const canCreate = !!role && can(role, "notices", "create");
-  const canDelete = !!role && can(role, "notices", "delete");
+  const canRead = can("notices", "read");
+  const canCreate = can("notices", "create");
+  const canDelete = can("notices", "delete");
 
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState("");

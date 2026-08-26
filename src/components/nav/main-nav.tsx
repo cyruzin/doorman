@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { can, type Resource } from "@/lib/permissions";
+import type { Resource } from "@/lib/permissions";
+import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import {
   ApartmentsIcon,
@@ -33,10 +34,10 @@ const links = [
 
 export function MainNav() {
   const { data: session } = useSession();
+  const { can } = usePermissions();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  const role = session?.user?.role;
   const name = session?.user?.name ?? "";
   // The header chip only has room for a first name.
   const displayName = name.trim().split(/\s+/)[0] ?? name;
@@ -64,7 +65,7 @@ export function MainNav() {
       <div className={isOpen ? "main-nav-panel open" : "main-nav-panel"}>
         <nav className="main-nav-links">
           {links
-            .filter((link) => !link.resources || (role && link.resources.some((r) => can(role, r, "read"))))
+            .filter((link) => !link.resources || link.resources.some((r) => can(r, "read")))
             .map(({ href, label, Icon }) => (
               <Link
                 key={href}

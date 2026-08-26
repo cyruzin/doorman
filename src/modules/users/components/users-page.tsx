@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { can } from "@/lib/permissions";
+import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
+import { PermissionsPanel } from "@/modules/permissions/components/permissions-panel";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -15,17 +15,19 @@ import styles from "./users-page.module.css";
 
 const PAGE_SIZE = 20;
 
+type Tab = "users" | "permissions";
+
 export function UsersPage() {
-  const { data: session } = useSession();
-  const role = session?.user?.role;
+  const { can } = usePermissions();
   const { showToast } = useToast();
   const requestConfirm = useConfirm();
 
-  const canRead = !!role && can(role, "users", "read");
-  const canCreate = !!role && can(role, "users", "create");
-  const canUpdate = !!role && can(role, "users", "update");
-  const canDelete = !!role && can(role, "users", "delete");
+  const canRead = can("users", "read");
+  const canCreate = can("users", "create");
+  const canUpdate = can("users", "update");
+  const canDelete = can("users", "delete");
 
+  const [tab, setTab] = useState<Tab>("users");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebouncedValue(search);
@@ -107,7 +109,7 @@ export function UsersPage() {
     <div className="page">
       <div className="page-header">
         <h1 className={styles.title}>Usuários</h1>
-        {canCreate && !isCreating && (
+        {tab === "users" && canCreate && !isCreating && (
           <button
             type="button"
             className="btn btn-primary"
@@ -122,33 +124,62 @@ export function UsersPage() {
         )}
       </div>
 
-      {isCreating && (
-        <div className={`card ${styles.formCard}`}>
-          <UserForm onSubmit={handleCreate} onCancel={() => setIsCreating(false)} submitLabel="Criar" />
+      {canUpdate && (
+        <div className={`segmented ${styles.tabs}`} role="tablist" aria-label="Seção de usuários">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "users"}
+            className={tab === "users" ? "segmented-option active" : "segmented-option"}
+            onClick={() => setTab("users")}
+          >
+            Usuários
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "permissions"}
+            className={tab === "permissions" ? "segmented-option active" : "segmented-option"}
+            onClick={() => setTab("permissions")}
+          >
+            Permissões
+          </button>
         </div>
       )}
 
-      {editing && (
-        <div className={`card ${styles.formCard}`}>
-          <UserForm defaultValues={editing} onSubmit={handleUpdate} onCancel={() => setEditing(null)} submitLabel="Salvar" />
-        </div>
-      )}
-
-      <input
-        type="search"
-        className="input search-bar"
-        placeholder="Buscar usuário..."
-        value={search}
-        onChange={(e) => handleSearchChange(e.target.value)}
-        aria-label="Buscar usuário"
-      />
-
-      {isLoading ? (
-        <p>Carregando...</p>
+      {tab === "permissions" ? (
+        <PermissionsPanel />
       ) : (
         <>
-          <UserTable items={users} canUpdate={canUpdate} canDelete={canDelete} onEdit={setEditing} onDelete={handleDelete} />
-          <Pagination page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPageChange={setPage} />
+          {isCreating && (
+            <div className={`card ${styles.formCard}`}>
+              <UserForm onSubmit={handleCreate} onCancel={() => setIsCreating(false)} submitLabel="Criar" />
+            </div>
+          )}
+
+          {editing && (
+            <div className={`card ${styles.formCard}`}>
+              <UserForm defaultValues={editing} onSubmit={handleUpdate} onCancel={() => setEditing(null)} submitLabel="Salvar" />
+            </div>
+          )}
+
+          <input
+            type="search"
+            className="input search-bar"
+            placeholder="Buscar usuário..."
+            value={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            aria-label="Buscar usuário"
+          />
+
+          {isLoading ? (
+            <p>Carregando...</p>
+          ) : (
+            <>
+              <UserTable items={users} canUpdate={canUpdate} canDelete={canDelete} onEdit={setEditing} onDelete={handleDelete} />
+              <Pagination page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPageChange={setPage} />
+            </>
+          )}
         </>
       )}
     </div>

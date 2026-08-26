@@ -24,6 +24,12 @@
   padding: var(--space-4) var(--space-5);
 }
 
+.gridLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
 .selectionRow {
   display: flex;
   justify-content: space-between;

@@ -223,7 +223,12 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
       </div>
 
       <div className={`card ${styles.entryForm}`}>
-        {!isEditing && <ApartmentGrid selectedUnit={unit || null} onSelect={selectUnit} />}
+        {!isEditing && (
+          <>
+            <p className={styles.gridLabel}>{`Selecione o apartamento que vai usar ${ROOM_LABELS[room]}`}</p>
+            <ApartmentGrid selectedUnit={unit || null} onSelect={selectUnit} />
+          </>
+        )}
 
         {(isEditing || unit) && (
           <div className={styles.selectionRow}>

@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { can } from "@/lib/permissions";
+import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { OwnerPage } from "@/modules/owners/components/owner-page";
 import { useOwners } from "@/modules/owners/hooks/use-owners";
 import { ResidentPage } from "@/modules/residents/components/resident-page";
@@ -12,12 +11,11 @@ import styles from "./people-page.module.css";
 type Kind = "resident" | "owner";
 
 export function PeoplePage() {
-  const { data: session } = useSession();
-  const role = session?.user?.role;
+  const { can } = usePermissions();
   const searchParams = useSearchParams();
 
-  const canSeeResidents = !!role && can(role, "residents", "read");
-  const canSeeOwners = !!role && can(role, "owners", "read");
+  const canSeeResidents = can("residents", "read");
+  const canSeeOwners = can("owners", "read");
 
   const urlKind = searchParams.get("kind");
   const urlEditId = searchParams.get("editId");
@@ -49,7 +47,7 @@ export function PeoplePage() {
 
   const resource = kind === "resident" ? "residents" : "owners";
   const entityLabel = kind === "resident" ? "Morador" : "Proprietário";
-  const canCreate = !!role && can(role, resource, "create");
+  const canCreate = can(resource, "create");
   // A resident always needs an owner already registered for their unit —
   // block resident creation until one exists.
   const blockResidentCreate = kind === "resident" && !hasAnyOwner;

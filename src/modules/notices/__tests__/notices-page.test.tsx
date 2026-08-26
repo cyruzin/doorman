@@ -16,6 +16,10 @@ vi.mock("next-auth/react", () => ({
   useSession: () => ({ data: { user: { id: "1", name: sessionUsername, role: sessionRole } } }),
 }));
 
+vi.mock("@/modules/permissions/hooks/use-permissions", () => ({
+  usePermissions: () => ({ can: () => true }),
+}));
+
 vi.mock("../hooks/use-notices", () => ({
   useNotices: (params: unknown) => useNoticesMock(params),
   useCreateNotice: () => ({ mutateAsync: mutateAsyncCreate, isPending: false }),

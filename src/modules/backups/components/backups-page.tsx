@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { can } from "@/lib/permissions";
+import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { useBackups, useCreateBackup, useDeleteBackup } from "../hooks/use-backups";
@@ -17,15 +16,14 @@ function formatSize(bytes: number): string {
 }
 
 export function BackupsPage() {
-  const { data: session } = useSession();
-  const role = session?.user?.role;
+  const { can } = usePermissions();
   const { showToast } = useToast();
   const requestConfirm = useConfirm();
   const [filter, setFilter] = useState<BackupFilter>({});
 
-  const canRead = !!role && can(role, "backups", "read");
-  const canCreate = !!role && can(role, "backups", "create");
-  const canDelete = !!role && can(role, "backups", "delete");
+  const canRead = can("backups", "read");
+  const canCreate = can("backups", "create");
+  const canDelete = can("backups", "delete");
 
   const { data: backups = [], isLoading } = useBackups(filter, { enabled: canRead });
   const createBackup = useCreateBackup();

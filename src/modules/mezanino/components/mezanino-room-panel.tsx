@@ -123,6 +123,7 @@ export function MezaninoRoomPanel({ room }: MezaninoRoomPanelProps) {
       </div>
 
       <div className={`card ${styles.entryForm}`}>
+        <p className={styles.gridLabel}>{`Selecione o apartamento que vai usar ${ROOM_LABELS[room]}`}</p>
         <ApartmentGrid selectedUnit={unit || null} onSelect={selectUnit} />
 
         {unit && (

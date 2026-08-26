@@ -37,6 +37,18 @@ model User {
   createdAt    DateTime @default(now())
 }
 
+// One row per (role, resource, action) granted — presence means allowed.
+// Replaces the old hardcoded matrix in src/lib/permissions.ts so an admin
+// can tune it from the Usuários > Permissões screen without a code change.
+model RolePermission {
+  id       String @id @default(cuid())
+  role     Role
+  resource String
+  action   String
+
+  @@unique([role, resource, action])
+}
+
 // A person currently living in a unit — can be more than one per unit, and
 // can also be the unit's owner (isOwner). When isOwner is true, ownerId links
 // to the canonical Owner record instead of duplicating their name/cpf/email —

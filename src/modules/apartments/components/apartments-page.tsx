@@ -1,18 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { can } from "@/lib/permissions";
+import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { ApartmentGrid } from "./apartment-grid";
 import { ApartmentDetail } from "./apartment-detail";
 import styles from "./apartments-page.module.css";
 
 export function ApartmentsPage() {
-  const { data: session } = useSession();
-  const role = session?.user?.role;
+  const { can } = usePermissions();
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
 
-  const canView = !!role && (can(role, "residents", "read") || can(role, "owners", "read"));
+  const canView = can("residents", "read") || can("owners", "read");
 
   if (!canView) {
     return (

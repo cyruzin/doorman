@@ -8,6 +8,10 @@ vi.mock("next-auth/react", () => ({
   useSession: () => ({ data: sessionRole ? { user: { id: "1", name: "admin", role: sessionRole } } : null }),
 }));
 
+vi.mock("@/modules/permissions/hooks/use-permissions", () => ({
+  usePermissions: () => ({ can: () => sessionRole !== null }),
+}));
+
 vi.mock("../components/mezanino-room-panel", () => ({
   MezaninoRoomPanel: ({ room }: { room: string }) => <div data-testid="panel">{room}</div>,
 }));

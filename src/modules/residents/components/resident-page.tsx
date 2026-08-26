@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { can } from "@/lib/permissions";
+import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -25,14 +24,13 @@ interface ResidentPageProps {
 }
 
 export function ResidentPage({ isCreating, onCreatingChange, initialEditId }: ResidentPageProps) {
-  const { data: session } = useSession();
-  const role = session?.user?.role;
+  const { can } = usePermissions();
   const { showToast } = useToast();
   const requestConfirm = useConfirm();
 
-  const canRead = !!role && can(role, "residents", "read");
-  const canUpdate = !!role && can(role, "residents", "update");
-  const canDelete = !!role && can(role, "residents", "delete");
+  const canRead = can("residents", "read");
+  const canUpdate = can("residents", "update");
+  const canDelete = can("residents", "delete");
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<ResidentStatusFilter>("active");

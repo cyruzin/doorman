@@ -24,6 +24,11 @@ vi.mock("@/lib/scheduling", () => ({
   getCapacityPercent: (...args: unknown[]) => getCapacityPercent(...args),
 }));
 
+const can = vi.fn();
+vi.mock("@/lib/permissions-db", () => ({
+  can: (...args: unknown[]) => can(...args),
+}));
+
 import { GET } from "../route";
 
 describe("GET /api/dashboard", () => {
@@ -36,6 +41,8 @@ describe("GET /api/dashboard", () => {
     getCapacityPercent.mockReset();
     getCapacityPercent.mockResolvedValue(0);
     noticeFindMany.mockResolvedValue([]);
+    can.mockReset();
+    can.mockResolvedValue(true);
   });
 
   it("rejects an unauthorized request", async () => {

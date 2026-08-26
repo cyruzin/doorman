@@ -13,6 +13,10 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(urlRoom ? { room: urlRoom } : {}),
 }));
 
+vi.mock("@/modules/permissions/hooks/use-permissions", () => ({
+  usePermissions: () => ({ can: () => sessionRole !== null }),
+}));
+
 vi.mock("../components/scheduling-room-panel", () => ({
   SchedulingRoomPanel: ({ room }: { room: string }) => <div data-testid="panel">{room}</div>,
 }));

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/api-guard";
-import { can } from "@/lib/permissions";
+import { can } from "@/lib/permissions-db";
 import { getAllUnits } from "@/lib/building";
 import { getCapacityPercent } from "@/lib/scheduling";
 import { SCHEDULING_ROOMS } from "@/modules/scheduling/types";
@@ -58,10 +58,14 @@ export async function GET() {
   const { session, error } = await requirePermission("residents", "read");
   if (error) return error;
 
+  const [canScheduling, canNotices] = await Promise.all([
+    can(session.user.role, "scheduling", "read"),
+    can(session.user.role, "notices", "read"),
+  ]);
   const [occupancy, scheduling, notices] = await Promise.all([
     loadOccupancy(),
-    can(session.user.role, "scheduling", "read") ? loadScheduling() : Promise.resolve(null),
-    can(session.user.role, "notices", "read") ? loadPinnedNotices() : Promise.resolve(null),
+    canScheduling ? loadScheduling() : Promise.resolve(null),
+    canNotices ? loadPinnedNotices() : Promise.resolve(null),
   ]);
 
   return NextResponse.json({ occupancy, scheduling, notices });

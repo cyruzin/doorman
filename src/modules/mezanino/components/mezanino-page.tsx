@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { can } from "@/lib/permissions";
+import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { MEZANINO_ROOMS, ROOM_LABELS, type MezaninoRoom } from "../types";
 import { GameRoomIcon, GymIcon, KidsIcon } from "./room-icons";
 import { MezaninoRoomPanel } from "./mezanino-room-panel";
@@ -15,11 +14,10 @@ const ROOM_ICONS: Record<MezaninoRoom, typeof GameRoomIcon> = {
 };
 
 export function MezaninoPage() {
-  const { data: session } = useSession();
-  const role = session?.user?.role;
+  const { can } = usePermissions();
   const [room, setRoom] = useState<MezaninoRoom>("GAME_ROOM");
 
-  const canView = !!role && can(role, "mezanino", "read");
+  const canView = can("mezanino", "read");
 
   if (!canView) {
     return (
