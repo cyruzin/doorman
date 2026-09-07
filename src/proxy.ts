@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { isSessionExpiredByShift } from "@/lib/shift";
 
 export const proxy = auth((req) => {
-  const isAuthed = !!req.auth;
+  // Sessão aberta antes da última troca de turno (6h/18h) conta como
+  // deslogada — logout automático na troca, verificado a cada request.
+  const isAuthed = !!req.auth && !isSessionExpiredByShift(req.auth.loginAt);
   const isLoginPage = req.nextUrl.pathname.startsWith("/login");
 
   if (!isAuthed && !isLoginPage) {

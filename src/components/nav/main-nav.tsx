@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import type { Resource } from "@/lib/permissions";
 import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
+import { useShiftAutoLogout } from "@/modules/auth/hooks/use-shift-auto-logout";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import {
   ApartmentsIcon,
@@ -37,6 +38,8 @@ export function MainNav() {
   const { can } = usePermissions();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+
+  useShiftAutoLogout(session?.loginAt);
 
   const name = session?.user?.name ?? "";
   // The header chip only has room for a first name.

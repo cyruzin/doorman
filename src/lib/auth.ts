@@ -69,12 +69,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.role = user.role as Role;
         token.id = user.id as string;
+        // Marca o login pra permitir o logout automático na troca de turno (6h/18h).
+        token.loginAt = Date.now();
       }
       return token;
     },
     session({ session, token }) {
       session.user.id = token.id as string;
       session.user.role = token.role as Role;
+      session.loginAt = token.loginAt as number;
       return session;
     },
   },

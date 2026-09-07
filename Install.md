@@ -135,6 +135,25 @@ Pontos importantes para produção:
   pm2 startup   # configura para iniciar junto com o sistema
   ```
 
+### 3.1 Acessando de outra máquina pelo IP da rede (ex.: Raspberry Pi na portaria)
+
+Se o servidor roda numa máquina (Raspberry Pi, mini PC, etc.) e é acessado de
+outros computadores pelo IP dela na rede local (ex.: `http://192.168.0.236:3000`)
+em vez de `localhost`, é preciso adicionar mais uma variável ao `.env`:
+
+```bash
+AUTH_URL="http://192.168.0.236:3000"
+```
+
+Sem isso, o `next start` monta a URL de redirecionamento do logout como
+`localhost`, e não como o IP real — funciona normalmente até o usuário clicar
+em Sair, quando é jogado para `localhost:3000`, que não existe na máquina dele.
+Ajuste o IP/porta no `AUTH_URL` para os valores reais da sua máquina, reinicie
+o servidor (não precisa rebuildar, é lido em tempo de execução) e pronto.
+
+Se o IP dessa máquina puder mudar (não tem reserva fixa no roteador), vale
+reservar um IP fixo para ela — senão o `AUTH_URL` fica desatualizado.
+
 ## 4. Comandos úteis
 
 ```bash

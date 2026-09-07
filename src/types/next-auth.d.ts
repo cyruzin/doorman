@@ -11,6 +11,8 @@ declare module "next-auth" {
       id: string;
       role: Role;
     } & DefaultSession["user"];
+    /** Timestamp (ms) de quando o login foi feito — usado no logout automático por troca de turno. */
+    loginAt: number;
   }
 }
 
@@ -18,5 +20,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     role: Role;
+    loginAt: number;
   }
 }
