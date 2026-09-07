@@ -43,6 +43,10 @@ arquivo `.env` na raiz do projeto com o seguinte conteúdo:
 DATABASE_URL="file:./dev.db"
 AUTH_SECRET="cole-aqui-o-segredo-gerado-no-passo-abaixo"
 
+# necessário só se outras máquinas vão acessar pelo IP da rede (ex.: Raspberry
+# Pi na portaria) em vez de localhost — ver seção 3.1
+# AUTH_URL="http://192.168.0.236:3000"
+
 # opcional — quantidade de backups mantidos (padrão: 10)
 BACKUP_RETENTION=10
 ```
