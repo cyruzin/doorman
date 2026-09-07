@@ -10,15 +10,13 @@ Roda localmente numa única máquina — sem Docker, sem Postgres (SQLite).
 
 ## Rodando o projeto
 
-Requer um `.env` na raiz com:
-
-```
-DATABASE_URL="file:./dev.db"
-```
+Guia completo (passo a passo, `.env`, build de produção, acesso por IP de
+rede) em [`INSTALL.md`](./INSTALL.md). Resumo rápido:
 
 ```bash
 npm install
-npx prisma migrate dev   # aplica as migrações e gera o client
+# criar .env com DATABASE_URL e AUTH_SECRET — veja INSTALL.md, passo 2.1
+npx prisma migrate dev && npx prisma generate
 npx tsx scripts/seed-admin.ts [usuario] [senha]  # cria o super admin (padrão: admin/admin123)
 npm run dev
 ```
@@ -36,6 +34,7 @@ npx tsc --noEmit       # checagem de tipos
 
 ## Documentação
 
+- `INSTALL.md` — guia de instalação em outra máquina, do zero
 - `AGENTS.md` — visão geral do projeto e stack para agentes de IA
 - `.agents/ARCHITECTURE.md` — arquitetura, estrutura de pastas e padrões do código
 - `.agents/GIT_STANDARDS.md` — convenções de commit

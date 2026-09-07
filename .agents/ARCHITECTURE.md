@@ -54,6 +54,15 @@ scripts/
 - O usuário `isSuperAdmin` (criado por `scripts/seed-admin.ts`) não pode se
   auto-deletar nem perder o papel de ADMIN — proteção contra lockdown do
   sistema.
+- **Logout automático por troca de turno (6h/18h)**: sessões abertas antes
+  da última troca contam como expiradas. `src/lib/shift.ts` tem a lógica de
+  horário; a aplicação de verdade é em `src/proxy.ts` (server, a cada
+  request — `isAuthed = !!req.auth && !isSessionExpiredByShift(...)`). O
+  hook `useShiftAutoLogout` (`src/modules/auth/hooks/`) só dá a experiência
+  client (dispara `signOut()` na hora certa e num recheck de segurança de
+  60s, sem esperar o usuário navegar); antes do `signOut()` ele registra um
+  recado automático no mural via `POST /api/notices/shift-logout`
+  (`Notice.isAutomatic`, que a rota de delete já protege contra exclusão).
 
 ## Banco de dados
 
