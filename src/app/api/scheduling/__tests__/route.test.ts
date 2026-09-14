@@ -24,6 +24,9 @@ vi.mock("@/lib/prisma", () => ({
 
 import { GET, POST } from "../route";
 
+// Far future so the schema's "event must be in the future" rule never expires.
+const FUTURE_ISO = "2099-06-15T20:00:00.000Z";
+
 describe("GET /api/scheduling", () => {
   beforeEach(() => {
     requirePermission.mockReset();
@@ -122,7 +125,7 @@ describe("POST /api/scheduling", () => {
     room: "CINEMA",
     unit: "101",
     residentId: "t1",
-    eventAt: "2026-09-10T20:00:00.000Z",
+    eventAt: FUTURE_ISO,
     allowMultipleSameDay: false,
   };
 

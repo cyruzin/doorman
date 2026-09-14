@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { PDFDocument } from "pdf-lib";
-import { buildSchedulingReportPdf } from "../scheduling-report";
+import { PDFDocument, StandardFonts } from "pdf-lib";
+import { buildSchedulingReportPdf, fitToWidth } from "../scheduling-report";
 
 const baseParams = {
   room: "CINEMA" as const,
@@ -45,6 +45,17 @@ describe("buildSchedulingReportPdf", () => {
     });
 
     expect(Buffer.from(bytes.slice(0, 5)).toString("ascii")).toBe("%PDF-");
+  });
+
+  it("clips an overlong requester name so it cannot overlap the next column", async () => {
+    const font = await (await PDFDocument.create()).embedFont(StandardFonts.Helvetica);
+    const name = "ADEILDA FERNANDES DE MELO LIMA DOS SANTOS CONCEICAO";
+    const clipped = fitToWidth(name, font, 10, 177);
+
+    expect(clipped).not.toBe(name);
+    expect(clipped.endsWith("…")).toBe(true);
+    expect(font.widthOfTextAtSize(clipped, 10)).toBeLessThanOrEqual(177);
+    expect(fitToWidth("101", font, 10, 177)).toBe("101");
   });
 
   it("spans multiple pages when there are enough rows", async () => {

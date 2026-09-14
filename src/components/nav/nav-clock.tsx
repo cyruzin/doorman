@@ -29,7 +29,12 @@ export function NavClock() {
 
   return (
     <span className="nav-clock" suppressHydrationWarning>
-      {formatDate(now)} <span className="nav-clock-time">- {formatTime(now)}</span>
+      {formatDate(now)}{" "}
+      {/* suppressHydrationWarning only covers an element's own text, so the nested
+          time span needs its own — the second always differs from the server's. */}
+      <span className="nav-clock-time" suppressHydrationWarning>
+        - {formatTime(now)}
+      </span>
     </span>
   );
 }

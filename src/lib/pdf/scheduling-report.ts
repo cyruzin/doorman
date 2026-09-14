@@ -1,4 +1,4 @@
-import { PDFDocument, PageSizes, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, PageSizes, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 import { REPORT_ROOM_LABELS, type DateRangeFilter, type ReportRoom, type ReportStatusFilter } from "@/lib/reports";
 
 export interface ReportEntryRow {
@@ -21,13 +21,25 @@ export interface BuildSchedulingReportPdfParams {
 
 const MARGIN = 40;
 const ROW_HEIGHT = 20;
+const CELL_GAP = 8;
 const COLUMNS = [
-  { label: "Apartamento", width: 90 },
+  { label: "Apartamento", width: 75 },
   { label: "Status", width: 70 },
-  { label: "Solicitante", width: 160 },
+  { label: "Solicitante", width: 185 },
   { label: "Data do evento", width: 100 },
-  { label: "Operador", width: 95 },
+  { label: "Operador", width: 85 },
 ];
+
+// ponytail: hard clip instead of wrapping — a second line per row would need
+// variable row heights and page-break recalculation.
+export function fitToWidth(text: string, font: PDFFont, size: number, maxWidth: number): string {
+  if (font.widthOfTextAtSize(text, size) <= maxWidth) return text;
+  let out = text;
+  while (out.length > 0 && font.widthOfTextAtSize(`${out}…`, size) > maxWidth) {
+    out = out.slice(0, -1);
+  }
+  return `${out}…`;
+}
 
 function formatDate(date: Date): string {
   return date.toLocaleDateString("pt-BR");
@@ -141,7 +153,13 @@ export async function buildSchedulingReportPdf({
     let x = MARGIN;
     const row = [entry.unit, statusLabel(entry), entry.requesterName, formatDateTime(entry.eventAt), operatorName(entry)];
     row.forEach((value, i) => {
-      page.drawText(value, { x, y, size: 10, font, color: rgb(0.15, 0.15, 0.15) });
+      page.drawText(fitToWidth(value, font, 10, COLUMNS[i].width - CELL_GAP), {
+        x,
+        y,
+        size: 10,
+        font,
+        color: rgb(0.15, 0.15, 0.15),
+      });
       x += COLUMNS[i].width;
     });
     y -= ROW_HEIGHT;

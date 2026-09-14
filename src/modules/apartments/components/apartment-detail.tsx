@@ -36,7 +36,7 @@ export function ApartmentDetail({ unit }: ApartmentDetailProps) {
               </thead>
               <tbody>
                 <tr>
-                  <td>
+                  <td className="cell-name">
                     <Link href={`/residents?kind=owner&q=${encodeURIComponent(owner.name)}`} className={styles.personLink}>
                       {owner.name}
                     </Link>
@@ -63,7 +63,7 @@ export function ApartmentDetail({ unit }: ApartmentDetailProps) {
               <tbody>
                 {residents.map((resident) => (
                   <tr key={resident.id}>
-                    <td>
+                    <td className="cell-name">
                       <Link href={`/residents?kind=resident&q=${encodeURIComponent(resident.name)}`} className={styles.personLink}>
                         {resident.name}
                       </Link>

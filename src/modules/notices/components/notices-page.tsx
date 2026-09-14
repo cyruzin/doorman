@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
+import { extractApiErrorMessage } from "@/lib/api-error";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { Pagination } from "@/components/pagination/pagination";
@@ -69,8 +70,8 @@ export function NoticesPage() {
       setPage(1);
       setIsCreating(false);
       showToast("Recado registrado", "success");
-    } catch {
-      showToast("Erro ao registrar recado", "error");
+    } catch (err) {
+      showToast(extractApiErrorMessage(err, "Erro ao registrar recado"), "error");
     }
   };
 
@@ -86,8 +87,8 @@ export function NoticesPage() {
         try {
           await deleteNotice.mutateAsync(notice.id);
           showToast("Recado removido", "success");
-        } catch {
-          showToast("Erro ao remover recado", "error");
+        } catch (err) {
+          showToast(extractApiErrorMessage(err, "Erro ao remover recado"), "error");
         }
       },
       {

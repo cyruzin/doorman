@@ -22,6 +22,9 @@ vi.mock("@/lib/prisma", () => ({
 
 import { DELETE, PATCH } from "../route";
 
+// Far future so the schema's "event must be in the future" rule never expires.
+const FUTURE_ISO = "2099-06-15T20:00:00.000Z";
+
 function params(id: string) {
   return { params: Promise.resolve({ id }) };
 }
@@ -34,7 +37,7 @@ function patchRequest(id: string, body: unknown) {
   });
 }
 
-const validUpdate = { eventAt: "2026-09-10T20:00:00.000Z", allowMultipleSameDay: false };
+const validUpdate = { eventAt: FUTURE_ISO, allowMultipleSameDay: false };
 
 describe("PATCH /api/scheduling/[id]", () => {
   beforeEach(() => {

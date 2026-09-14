@@ -54,9 +54,13 @@ export function listBackups(from?: Date, to?: Date): BackupFile[] {
 }
 
 export function deleteBackup(fileName: string): void {
-  // basename() blocks path traversal from a user-supplied file name
-  const filePath = path.join(BACKUPS_DIR, path.basename(fileName));
+  const filePath = backupPath(fileName);
   if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+}
+
+/** basename() blocks path traversal from a user-supplied file name. */
+export function backupPath(fileName: string): string {
+  return path.join(BACKUPS_DIR, path.basename(fileName));
 }
 
 function enforceRetention(): void {

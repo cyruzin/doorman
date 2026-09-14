@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { SearchInput } from "@/components/search-input/search-input";
+import { extractApiErrorMessage } from "@/lib/api-error";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -85,8 +86,8 @@ export function ResidentPage({ isCreating, onCreatingChange, initialSearch, onEd
       await createResident.mutateAsync(data);
       showToast("Morador criado com sucesso", "success");
       onCreatingChange(false);
-    } catch {
-      showToast("Erro ao criar morador", "error");
+    } catch (err) {
+      showToast(extractApiErrorMessage(err, "Erro ao criar morador"), "error");
     }
   };
 
@@ -96,8 +97,8 @@ export function ResidentPage({ isCreating, onCreatingChange, initialSearch, onEd
       await updateResident.mutateAsync({ id: editing.id, data });
       showToast("Morador atualizado com sucesso", "success");
       closeEditing();
-    } catch {
-      showToast("Erro ao atualizar morador", "error");
+    } catch (err) {
+      showToast(extractApiErrorMessage(err, "Erro ao atualizar morador"), "error");
     }
   };
 
@@ -108,8 +109,8 @@ export function ResidentPage({ isCreating, onCreatingChange, initialSearch, onEd
         try {
           await updateResident.mutateAsync({ id: resident.id, data: { active: activating } });
           showToast(activating ? "Morador reativado" : "Morador desativado", "success");
-        } catch {
-          showToast("Erro ao atualizar status do morador", "error");
+        } catch (err) {
+          showToast(extractApiErrorMessage(err, "Erro ao atualizar status do morador"), "error");
         }
       },
       activating
@@ -128,8 +129,8 @@ export function ResidentPage({ isCreating, onCreatingChange, initialSearch, onEd
         try {
           await deleteResident.mutateAsync(resident.id);
           showToast("Morador excluído", "success");
-        } catch {
-          showToast("Erro ao excluir morador", "error");
+        } catch (err) {
+          showToast(extractApiErrorMessage(err, "Erro ao excluir morador"), "error");
         }
       },
       {

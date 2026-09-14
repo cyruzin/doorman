@@ -30,7 +30,7 @@ export function UserTable({ items, canUpdate, canDelete, onEdit, onDelete }: Use
         <tbody>
           {items.map((user) => (
             <tr key={user.id}>
-              <td>{user.name}</td>
+              <td className="cell-name">{user.name}</td>
               <td>{user.username}</td>
               <td>
                 <span className="badge badge-info">{user.role === "ADMIN" ? "Administrador" : "Porteiro"}</span>

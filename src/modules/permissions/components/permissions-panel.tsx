@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { extractApiErrorMessage } from "@/lib/api-error";
 import { useToast } from "@/components/toast/toast-provider";
 import { ACTIONS, RESOURCES, type Action, type PermissionsMatrix, type Resource } from "@/lib/permissions";
 import { usePermissionsMatrix, useUpdatePermissionsMatrix } from "../hooks/use-permissions";
@@ -59,9 +60,7 @@ export function PermissionsPanel() {
       await updateMatrix.mutateAsync(draft);
       showToast("Permissões atualizadas com sucesso", "success");
     } catch (err) {
-      const message =
-        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Erro ao atualizar permissões";
-      showToast(message, "error");
+      showToast(extractApiErrorMessage(err, "Erro ao atualizar permissões"), "error");
     }
   };
 

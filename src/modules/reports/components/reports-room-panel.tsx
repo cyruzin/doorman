@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { SearchInput } from "@/components/search-input/search-input";
+import { extractApiErrorMessage } from "@/lib/api-error";
 import { useToast } from "@/components/toast/toast-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Pagination } from "@/components/pagination/pagination";
@@ -110,8 +111,8 @@ export function ReportsRoomPanel({ room }: ReportsRoomPanelProps) {
       });
       downloadBlob(blob, `relatorio-${slugify(ROOM_LABELS[room])}-${toFileTimestamp(new Date())}.pdf`);
       showToast("Relatório gerado com sucesso", "success");
-    } catch {
-      showToast("Erro ao gerar relatório", "error");
+    } catch (err) {
+      showToast(extractApiErrorMessage(err, "Erro ao gerar relatório"), "error");
     }
   };
 

@@ -54,6 +54,22 @@ export function MainNav() {
           St. Tropez
         </Link>
         <NavClock />
+        <div className="main-nav-actions">
+          <ThemeToggleButton />
+
+          {session?.user && (
+            <div className="main-nav-user-chip">
+              <span className="main-nav-user-avatar" aria-hidden="true">
+                {name.charAt(0).toUpperCase()}
+              </span>
+              <span className="main-nav-user">{displayName}</span>
+            </div>
+          )}
+
+          <button type="button" className="btn btn-secondary" onClick={() => signOut({ callbackUrl: "/login" })}>
+            Sair
+          </button>
+        </div>
         <button
           type="button"
           className="icon-btn main-nav-hamburger"
@@ -81,22 +97,6 @@ export function MainNav() {
               </Link>
             ))}
         </nav>
-        <div className="main-nav-actions">
-          <ThemeToggleButton />
-
-          {session?.user && (
-            <div className="main-nav-user-chip">
-              <span className="main-nav-user-avatar" aria-hidden="true">
-                {name.charAt(0).toUpperCase()}
-              </span>
-              <span className="main-nav-user">{displayName}</span>
-            </div>
-          )}
-
-          <button type="button" className="btn btn-secondary" onClick={() => signOut({ callbackUrl: "/login" })}>
-            Sair
-          </button>
-        </div>
       </div>
     </header>
   );

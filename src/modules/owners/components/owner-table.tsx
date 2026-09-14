@@ -35,7 +35,7 @@ export function OwnerTable({ items, canUpdate, canDelete, onEdit, onToggleActive
         <tbody>
           {items.map((owner) => (
             <tr key={owner.id}>
-              <td>{owner.name}</td>
+              <td className="cell-name">{owner.name}</td>
               <td>{owner.units.join(", ")}</td>
               <td>{owner.cpf ? maskCpf(owner.cpf) : "—"}</td>
               <td>
@@ -56,9 +56,7 @@ export function OwnerTable({ items, canUpdate, canDelete, onEdit, onToggleActive
                 )}
               </td>
               <td>
-                {owner.vehicles.length === 0
-                  ? "—"
-                  : [owner.vehicles[0].model, owner.vehicles[0].plate].filter(Boolean).join(" — ")}
+                {owner.vehicles[0]?.model || "—"}
               </td>
               {(canUpdate || canDelete) && (
                 <td>

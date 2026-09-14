@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { SearchInput } from "@/components/search-input/search-input";
+import { extractApiErrorMessage } from "@/lib/api-error";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -85,8 +86,8 @@ export function OwnerPage({ isCreating, onCreatingChange, initialSearch, onEditi
       await createOwner.mutateAsync(data);
       showToast("Proprietário criado com sucesso", "success");
       onCreatingChange(false);
-    } catch {
-      showToast("Erro ao criar proprietário", "error");
+    } catch (err) {
+      showToast(extractApiErrorMessage(err, "Erro ao criar proprietário"), "error");
     }
   };
 
@@ -96,8 +97,8 @@ export function OwnerPage({ isCreating, onCreatingChange, initialSearch, onEditi
       await updateOwner.mutateAsync({ id: editing.id, data });
       showToast("Proprietário atualizado com sucesso", "success");
       closeEditing();
-    } catch {
-      showToast("Erro ao atualizar proprietário", "error");
+    } catch (err) {
+      showToast(extractApiErrorMessage(err, "Erro ao atualizar proprietário"), "error");
     }
   };
 
@@ -108,8 +109,8 @@ export function OwnerPage({ isCreating, onCreatingChange, initialSearch, onEditi
         try {
           await updateOwner.mutateAsync({ id: owner.id, data: { active: activating } });
           showToast(activating ? "Proprietário reativado" : "Proprietário desativado", "success");
-        } catch {
-          showToast("Erro ao atualizar status do proprietário", "error");
+        } catch (err) {
+          showToast(extractApiErrorMessage(err, "Erro ao atualizar status do proprietário"), "error");
         }
       },
       activating
@@ -129,9 +130,7 @@ export function OwnerPage({ isCreating, onCreatingChange, initialSearch, onEditi
           await deleteOwner.mutateAsync(owner.id);
           showToast("Proprietário excluído", "success");
         } catch (err) {
-          const message =
-            (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Erro ao excluir proprietário";
-          showToast(message, "error");
+          showToast(extractApiErrorMessage(err, "Erro ao excluir proprietário"), "error");
         }
       },
       {

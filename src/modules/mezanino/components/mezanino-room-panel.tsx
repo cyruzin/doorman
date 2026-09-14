@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { extractApiErrorMessage } from "@/lib/api-error";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { Pagination } from "@/components/pagination/pagination";
@@ -64,8 +65,8 @@ export function MezaninoRoomPanel({ room }: MezaninoRoomPanelProps) {
           await createEntry.mutateAsync({ room, unit, residentId });
           showToast("Entrada registrada com sucesso", "success");
           clearSelection();
-        } catch {
-          showToast("Erro ao registrar entrada", "error");
+        } catch (err) {
+          showToast(extractApiErrorMessage(err, "Erro ao registrar entrada"), "error");
         }
       },
       {
@@ -81,8 +82,8 @@ export function MezaninoRoomPanel({ room }: MezaninoRoomPanelProps) {
         try {
           await confirmExit.mutateAsync(entry.id);
           showToast("Saída registrada com sucesso", "success");
-        } catch {
-          showToast("Erro ao registrar saída", "error");
+        } catch (err) {
+          showToast(extractApiErrorMessage(err, "Erro ao registrar saída"), "error");
         }
       },
       {
@@ -98,8 +99,8 @@ export function MezaninoRoomPanel({ room }: MezaninoRoomPanelProps) {
         try {
           await deleteEntry.mutateAsync(entry.id);
           showToast("Entrada removida", "success");
-        } catch {
-          showToast("Erro ao remover entrada", "error");
+        } catch (err) {
+          showToast(extractApiErrorMessage(err, "Erro ao remover entrada"), "error");
         }
       },
       {
@@ -185,7 +186,7 @@ export function MezaninoRoomPanel({ room }: MezaninoRoomPanelProps) {
                   return (
                     <tr key={entry.id} className={pending ? styles.rowPending : styles.rowReturned}>
                       <td>{entry.unit}</td>
-                      <td>{entry.residentName}</td>
+                      <td className="cell-name">{entry.residentName}</td>
                       <td>{new Date(entry.entryAt).toLocaleDateString("pt-BR")}</td>
                       <td>{formatTime(entry.entryAt)}</td>
                       <td>

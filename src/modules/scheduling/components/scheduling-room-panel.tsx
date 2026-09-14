@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
 import { useSession } from "next-auth/react";
+import { extractApiErrorMessage } from "@/lib/api-error";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { Pagination } from "@/components/pagination/pagination";
@@ -38,15 +38,6 @@ function toDateInputValue(date: Date): string {
 
 function toTimeInputValue(date: Date): string {
   return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-}
-
-// Surfaces the API's specific { error: string } message instead of a generic fallback.
-function extractApiErrorMessage(error: unknown, fallback: string): string {
-  if (axios.isAxiosError(error)) {
-    const data = error.response?.data as { error?: unknown } | undefined;
-    if (typeof data?.error === "string") return data.error;
-  }
-  return fallback;
 }
 
 export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
@@ -171,8 +162,8 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
         try {
           await finishEntry.mutateAsync(entry.id);
           showToast("Evento finalizado", "success");
-        } catch {
-          showToast("Erro ao finalizar evento", "error");
+        } catch (err) {
+          showToast(extractApiErrorMessage(err, "Erro ao finalizar evento"), "error");
         }
       },
       {
@@ -188,8 +179,8 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
         try {
           await deleteEntry.mutateAsync(entry.id);
           showToast("Agendamento removido", "success");
-        } catch {
-          showToast("Erro ao remover agendamento", "error");
+        } catch (err) {
+          showToast(extractApiErrorMessage(err, "Erro ao remover agendamento"), "error");
         }
       },
       {
@@ -363,7 +354,7 @@ export function SchedulingRoomPanel({ room }: SchedulingRoomPanelProps) {
                       <td>{new Date(entry.eventAt).toLocaleDateString("pt-BR")}</td>
                       <td>{formatTime(entry.eventAt)}</td>
                       <td>{entry.unit}</td>
-                      <td>{entry.requesterName}</td>
+                      <td className="cell-name">{entry.requesterName}</td>
                       <td>{entry.allowMultipleSameDay ? "Sim" : "Não"}</td>
                       <td>
                         {finished ? (

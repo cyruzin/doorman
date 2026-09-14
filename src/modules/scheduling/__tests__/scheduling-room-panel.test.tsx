@@ -41,6 +41,8 @@ vi.mock("@/modules/apartments/hooks/use-unit-occupancy", () => ({
 import { SchedulingRoomPanel } from "../components/scheduling-room-panel";
 
 const FUTURE_ISO = "2099-06-15T20:00:00.000Z";
+// Typed into the date input; far future so the schema's "must be in the future" rule never expires.
+const FUTURE_DATE_INPUT = "2099-06-15";
 const PAST_ISO = "2000-01-10T14:00:00.000Z";
 
 function entry(overrides: Partial<SchedulingEntry> = {}): SchedulingEntry {
@@ -135,7 +137,7 @@ describe("SchedulingRoomPanel", () => {
     await userEvent.click(unitButton("101"));
     expect(await screen.findByRole("button", { name: "Agendar" })).toBeDisabled();
 
-    await userEvent.type(screen.getByLabelText("Data do evento"), "2026-09-10");
+    await userEvent.type(screen.getByLabelText("Data do evento"), FUTURE_DATE_INPUT);
     await userEvent.type(screen.getByLabelText("Hora do evento"), "20:00");
     expect(screen.getByRole("button", { name: "Agendar" })).toBeDisabled();
 
@@ -185,7 +187,7 @@ describe("SchedulingRoomPanel", () => {
 
     await userEvent.click(unitButton("101"));
     await userEvent.selectOptions(await screen.findByLabelText("Morador"), "t1");
-    await userEvent.type(screen.getByLabelText("Data do evento"), "2026-09-10");
+    await userEvent.type(screen.getByLabelText("Data do evento"), FUTURE_DATE_INPUT);
     await userEvent.type(screen.getByLabelText("Hora do evento"), "20:00");
     await userEvent.click(screen.getByRole("button", { name: "Agendar" }));
     await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));
@@ -195,7 +197,7 @@ describe("SchedulingRoomPanel", () => {
         room: "PARTY_HALL",
         unit: "101",
         residentId: "t1",
-        eventAt: new Date("2026-09-10T20:00").toISOString(),
+        eventAt: new Date(`${FUTURE_DATE_INPUT}T20:00`).toISOString(),
         allowMultipleSameDay: false,
         notes: undefined,
       });
@@ -208,7 +210,7 @@ describe("SchedulingRoomPanel", () => {
 
     await userEvent.click(unitButton("101"));
     await userEvent.selectOptions(await screen.findByLabelText("Morador"), "t1");
-    await userEvent.type(screen.getByLabelText("Data do evento"), "2026-09-10");
+    await userEvent.type(screen.getByLabelText("Data do evento"), FUTURE_DATE_INPUT);
     await userEvent.type(screen.getByLabelText("Hora do evento"), "20:00");
     await userEvent.click(screen.getByRole("checkbox", { name: "Mais de um evento no mesmo dia" }));
     await userEvent.click(screen.getByRole("checkbox", { name: "Observação" }));
@@ -230,7 +232,7 @@ describe("SchedulingRoomPanel", () => {
 
     await userEvent.click(unitButton("101"));
     await userEvent.selectOptions(await screen.findByLabelText("Morador"), "t1");
-    await userEvent.type(screen.getByLabelText("Data do evento"), "2026-09-10");
+    await userEvent.type(screen.getByLabelText("Data do evento"), FUTURE_DATE_INPUT);
     await userEvent.type(screen.getByLabelText("Hora do evento"), "20:00");
     await userEvent.click(screen.getByRole("button", { name: "Agendar" }));
     await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));
@@ -250,7 +252,7 @@ describe("SchedulingRoomPanel", () => {
 
     await userEvent.click(unitButton("101"));
     await userEvent.selectOptions(await screen.findByLabelText("Morador"), "t1");
-    await userEvent.type(screen.getByLabelText("Data do evento"), "2026-09-10");
+    await userEvent.type(screen.getByLabelText("Data do evento"), FUTURE_DATE_INPUT);
     await userEvent.type(screen.getByLabelText("Hora do evento"), "20:00");
     await userEvent.click(screen.getByRole("button", { name: "Agendar" }));
     await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));

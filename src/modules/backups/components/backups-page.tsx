@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
+import { extractApiErrorMessage } from "@/lib/api-error";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { useBackups, useCreateBackup, useDeleteBackup } from "../hooks/use-backups";
@@ -44,8 +45,8 @@ export function BackupsPage() {
       await createBackup.mutateAsync();
       setFilter({});
       showToast("Backup criado com sucesso", "success");
-    } catch {
-      showToast("Erro ao criar backup", "error");
+    } catch (err) {
+      showToast(extractApiErrorMessage(err, "Erro ao criar backup"), "error");
     }
   };
 
@@ -55,8 +56,8 @@ export function BackupsPage() {
         try {
           await deleteBackup.mutateAsync(fileName);
           showToast("Backup removido", "success");
-        } catch {
-          showToast("Erro ao remover backup", "error");
+        } catch (err) {
+          showToast(extractApiErrorMessage(err, "Erro ao remover backup"), "error");
         }
       },
       { title: "Excluir backup", description: `Remover o arquivo ${fileName}? Essa ação não pode ser desfeita.` },
@@ -112,7 +113,7 @@ export function BackupsPage() {
                 <th>Arquivo</th>
                 <th>Criado em</th>
                 <th>Tamanho</th>
-                {canDelete && <th aria-label="Ações" />}
+                <th aria-label="Ações" />
               </tr>
             </thead>
             <tbody>
@@ -121,13 +122,24 @@ export function BackupsPage() {
                   <td>{backup.fileName}</td>
                   <td>{new Date(backup.createdAt).toLocaleString("pt-BR")}</td>
                   <td>{formatSize(backup.sizeBytes)}</td>
-                  {canDelete && (
-                    <td>
-                      <button type="button" className="btn btn-danger" onClick={() => handleDelete(backup.fileName)}>
-                        Excluir
-                      </button>
-                    </td>
-                  )}
+                  <td>
+                    <div className={styles.rowActions}>
+                      {/* Plain link: the file is already on disk, the browser streams it
+                          straight to the pendrive with no blob held in memory. */}
+                      <a
+                        className="btn btn-secondary"
+                        href={`/api/backups/${encodeURIComponent(backup.fileName)}`}
+                        download={backup.fileName}
+                      >
+                        Baixar
+                      </a>
+                      {canDelete && (
+                        <button type="button" className="btn btn-danger" onClick={() => handleDelete(backup.fileName)}>
+                          Excluir
+                        </button>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

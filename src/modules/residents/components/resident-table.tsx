@@ -35,7 +35,7 @@ export function ResidentTable({ items, canUpdate, canDelete, onEdit, onToggleAct
         <tbody>
           {items.map((resident) => (
             <tr key={resident.id}>
-              <td>
+              <td className="cell-name">
                 {resident.name}
                 {resident.isOwner && <span className={`badge badge-info ${styles.ownerBadge}`}>Proprietário</span>}
               </td>
@@ -59,9 +59,7 @@ export function ResidentTable({ items, canUpdate, canDelete, onEdit, onToggleAct
                 )}
               </td>
               <td>
-                {resident.vehicles.length === 0
-                  ? "—"
-                  : [resident.vehicles[0].model, resident.vehicles[0].plate].filter(Boolean).join(" — ")}
+                {resident.vehicles[0]?.model || "—"}
               </td>
               {(canUpdate || canDelete) && (
                 <td>

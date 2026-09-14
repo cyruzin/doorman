@@ -4,6 +4,7 @@ import { useState } from "react";
 import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { PermissionsPanel } from "@/modules/permissions/components/permissions-panel";
 import { SearchInput } from "@/components/search-input/search-input";
+import { extractApiErrorMessage } from "@/lib/api-error";
 import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -69,8 +70,8 @@ export function UsersPage() {
       await createUser.mutateAsync({ name: data.name, username: data.username, password: data.password, role: data.role });
       showToast("Usuário criado com sucesso", "success");
       setIsCreating(false);
-    } catch {
-      showToast("Erro ao criar usuário", "error");
+    } catch (err) {
+      showToast(extractApiErrorMessage(err, "Erro ao criar usuário"), "error");
     }
   };
 
@@ -83,8 +84,8 @@ export function UsersPage() {
       await updateUser.mutateAsync({ id: editing.id, data: payload });
       showToast("Usuário atualizado com sucesso", "success");
       setEditing(null);
-    } catch {
-      showToast("Erro ao atualizar usuário", "error");
+    } catch (err) {
+      showToast(extractApiErrorMessage(err, "Erro ao atualizar usuário"), "error");
     }
   };
 
@@ -95,8 +96,8 @@ export function UsersPage() {
         try {
           await deleteUser.mutateAsync(user.id);
           showToast("Usuário removido", "success");
-        } catch {
-          showToast("Erro ao remover usuário", "error");
+        } catch (err) {
+          showToast(extractApiErrorMessage(err, "Erro ao remover usuário"), "error");
         }
       },
       {

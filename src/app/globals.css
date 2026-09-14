@@ -401,7 +401,8 @@ select.input {
   display: flex;
   align-items: center;
   gap: var(--space-5);
-  padding: 0 var(--space-5) var(--space-3);
+  /* Pulled left by the links' own padding so the first label lines up with the brand. */
+  padding: 0 var(--space-5) var(--space-3) calc(var(--space-5) - var(--space-2));
 }
 
 .main-nav-links {
@@ -418,7 +419,7 @@ select.input {
   font-size: var(--text-sm);
   font-weight: 500;
   color: rgba(255, 255, 255, 0.75);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2);
   border-radius: var(--radius-sm);
   transition: background-color 0.15s ease, color 0.15s ease;
 }
@@ -443,6 +444,8 @@ select.input {
 }
 
 .nav-clock {
+  /* Sits with the actions on the bar's right edge, leaving the links row full width. */
+  margin-left: auto;
   font-size: var(--text-sm);
   font-weight: 500;
   color: rgba(255, 255, 255, 0.75);
@@ -538,12 +541,10 @@ select.input {
   }
 
   .main-nav-actions {
-    flex-wrap: wrap;
-    justify-content: space-between;
-    padding-top: var(--space-3);
+    margin-left: auto;
+    gap: var(--space-2);
     padding-left: 0;
     border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.14);
   }
 }
 
@@ -587,6 +588,15 @@ td {
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
+}
+
+/* Names are the only free-text column; letting them wrap keeps a long name from
+   pushing the action buttons out of view behind a horizontal scrollbar. */
+td.cell-name {
+  white-space: normal;
+  min-width: 10rem;
+  max-width: 20rem;
+  overflow-wrap: anywhere;
 }
 
 th {
