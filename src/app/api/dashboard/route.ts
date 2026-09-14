@@ -3,22 +3,23 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/api-guard";
 import { can } from "@/lib/permissions-db";
 import { getAllUnits } from "@/lib/building";
+import { getOccupiedUnits } from "@/lib/units-status";
 import { getCapacityPercent } from "@/lib/scheduling";
 import { SCHEDULING_ROOMS } from "@/modules/scheduling/types";
 import type { SchedulingRoom } from "@/generated/prisma/enums";
 
 async function loadOccupancy() {
-  const [ownerUnits, residents] = await Promise.all([
-    prisma.ownerUnit.findMany({ where: { owner: { active: true } }, select: { unit: true } }),
-    prisma.resident.findMany({ where: { active: true }, select: { unit: true } }),
+  // Same "occupied" rule the apartment grid paints, so the two never disagree.
+  const [occupiedUnits, totalResidents] = await Promise.all([
+    getOccupiedUnits(),
+    prisma.resident.count({ where: { active: true } }),
   ]);
-  const occupiedUnits = new Set([...ownerUnits, ...residents].map((r) => r.unit)).size;
 
   return {
     totalUnits: getAllUnits().length,
-    occupiedUnits,
+    occupiedUnits: occupiedUnits.length,
     // Ownership alone doesn't make someone a "morador" — only residents count.
-    totalResidents: residents.length,
+    totalResidents,
   };
 }
 

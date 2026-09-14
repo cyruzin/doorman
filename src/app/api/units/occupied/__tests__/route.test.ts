@@ -32,16 +32,26 @@ describe("GET /api/units/occupied", () => {
     expect(res.status).toBe(401);
   });
 
-  it("merges units with an active owner and units with an active resident, de-duplicated", async () => {
+  it("lists units with an active resident, de-duplicated", async () => {
     requirePermission.mockResolvedValue({ session: {}, error: null });
-    ownerUnitFindMany.mockResolvedValue([{ unit: "202" }, { unit: "506" }]);
-    residentFindMany.mockResolvedValue([{ unit: "202" }, { unit: "101" }]);
+    residentFindMany.mockResolvedValue([{ unit: "202" }, { unit: "101" }, { unit: "202" }]);
 
     const res = await GET();
     const body = await res.json();
 
-    expect(body.units.sort()).toEqual(["101", "202", "506"]);
-    expect(ownerUnitFindMany).toHaveBeenCalledWith(expect.objectContaining({ where: { owner: { active: true } } }));
+    expect(body.units.sort()).toEqual(["101", "202"]);
     expect(residentFindMany).toHaveBeenCalledWith(expect.objectContaining({ where: { active: true } }));
+  });
+
+  it("does not count a unit that only has an owner — it can be owned and still empty", async () => {
+    requirePermission.mockResolvedValue({ session: {}, error: null });
+    ownerUnitFindMany.mockResolvedValue([{ unit: "1902" }]);
+    residentFindMany.mockResolvedValue([]);
+
+    const res = await GET();
+    const body = await res.json();
+
+    expect(body.units).toEqual([]);
+    expect(ownerUnitFindMany).not.toHaveBeenCalled();
   });
 });

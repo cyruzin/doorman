@@ -8,12 +8,16 @@ vi.mock("@/lib/api-guard", () => ({
 
 const ownerUnitFindMany = vi.fn();
 const residentFindMany = vi.fn();
+const residentCount = vi.fn();
 const schedulingFindMany = vi.fn();
 const noticeFindMany = vi.fn();
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     ownerUnit: { findMany: (...args: unknown[]) => ownerUnitFindMany(...args) },
-    resident: { findMany: (...args: unknown[]) => residentFindMany(...args) },
+    resident: {
+      findMany: (...args: unknown[]) => residentFindMany(...args),
+      count: (...args: unknown[]) => residentCount(...args),
+    },
     schedulingEntry: { findMany: (...args: unknown[]) => schedulingFindMany(...args) },
     notice: { findMany: (...args: unknown[]) => noticeFindMany(...args) },
   },
@@ -36,6 +40,8 @@ describe("GET /api/dashboard", () => {
     requirePermission.mockReset();
     ownerUnitFindMany.mockReset();
     residentFindMany.mockReset();
+    residentCount.mockReset();
+    residentCount.mockResolvedValue(0);
     schedulingFindMany.mockReset();
     noticeFindMany.mockReset();
     getCapacityPercent.mockReset();
@@ -53,10 +59,10 @@ describe("GET /api/dashboard", () => {
     expect(res.status).toBe(401);
   });
 
-  it("counts occupied units from active owners and residents, without double-counting a unit that has both", async () => {
+  it("counts occupied units from active residents, without double-counting a shared unit", async () => {
     requirePermission.mockResolvedValue({ session: { user: { role: "ADMIN" } }, error: null });
-    ownerUnitFindMany.mockResolvedValue([{ unit: "101" }]);
-    residentFindMany.mockResolvedValue([{ unit: "101" }, { unit: "202" }]);
+    residentFindMany.mockResolvedValue([{ unit: "101" }, { unit: "101" }, { unit: "202" }]);
+    residentCount.mockResolvedValue(3);
     schedulingFindMany.mockResolvedValue([]);
 
     const res = await GET();
@@ -64,7 +70,20 @@ describe("GET /api/dashboard", () => {
 
     expect(res.status).toBe(200);
     // Ownership alone doesn't make someone a "morador" — only actual residents count.
-    expect(body.occupancy).toMatchObject({ totalUnits: 110, occupiedUnits: 2, totalResidents: 2 });
+    expect(body.occupancy).toMatchObject({ totalUnits: 110, occupiedUnits: 2, totalResidents: 3 });
+  });
+
+  it("does not count a unit that only has an owner as occupied", async () => {
+    requirePermission.mockResolvedValue({ session: { user: { role: "ADMIN" } }, error: null });
+    ownerUnitFindMany.mockResolvedValue([{ unit: "1902" }]);
+    residentFindMany.mockResolvedValue([]);
+    schedulingFindMany.mockResolvedValue([]);
+
+    const res = await GET();
+    const body = await res.json();
+
+    expect(body.occupancy).toMatchObject({ occupiedUnits: 0, totalResidents: 0 });
+    expect(ownerUnitFindMany).not.toHaveBeenCalled();
   });
 
   it("includes scheduling capacity and upcoming events when the role can read scheduling", async () => {

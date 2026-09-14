@@ -275,6 +275,25 @@ select.input {
   border-top-color: var(--color-neutral-0);
 }
 
+/* The nav bar is flush against the top of the viewport, so a bubble above the
+   trigger is clipped — flip it (and its arrow) to hang below instead. */
+.main-nav [data-tooltip]::after {
+  top: calc(100% + 10px);
+  bottom: auto;
+}
+
+.main-nav [data-tooltip]::before {
+  top: 100%;
+  bottom: auto;
+  border-top-color: transparent;
+  border-bottom-color: var(--color-neutral-900);
+}
+
+:root[data-theme="dark"] .main-nav [data-tooltip]::before {
+  border-top-color: transparent;
+  border-bottom-color: var(--color-neutral-0);
+}
+
 /* ---------- segmented control (e.g. Inquilino / Proprietário) ---------- */
 
 .segmented {

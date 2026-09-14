@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/prisma";
 
-// A unit counts as occupied once it has an active owner or at least one active resident.
+// Occupied means somebody actually lives there — at least one active resident.
+// An owner alone doesn't count: the unit can be owned and still empty, waiting
+// to be rented.
 export async function getOccupiedUnits(): Promise<string[]> {
-  const [ownerUnits, residents] = await Promise.all([
-    prisma.ownerUnit.findMany({ where: { owner: { active: true } }, select: { unit: true } }),
-    prisma.resident.findMany({ where: { active: true }, select: { unit: true } }),
-  ]);
-  return [...new Set([...ownerUnits.map((u) => u.unit), ...residents.map((r) => r.unit)])];
+  const residents = await prisma.resident.findMany({ where: { active: true }, select: { unit: true } });
+  return [...new Set(residents.map((r) => r.unit))];
 }
