@@ -117,7 +117,10 @@
   border-color: var(--color-accent);
 }
 
-@media (max-width: 640px) {
+/* Tablets get the phone layout in both orientations: the width covers small
+   tablets and portrait, and `pointer: coarse` catches the big ones in landscape
+   (an iPad Pro 13 is 1366px wide) without demoting a 1366px desktop with a mouse. */
+@media (max-width: 1024px), (pointer: coarse) {
   .desktopOnly {
     display: none;
   }

@@ -50,7 +50,9 @@
   min-width: 0;
 }
 
-@media (max-width: 640px) {
+/* Same tablet rule as the nav and the apartment grid: the room list becomes a
+   row on top so the panel gets the full width. */
+@media (max-width: 1024px), (pointer: coarse) {
   .layout {
     grid-template-columns: 1fr;
   }
