@@ -46,6 +46,7 @@ export function MainNav() {
   const displayName = name.trim().split(/\s+/)[0] ?? name;
 
   const closeMenu = () => setIsOpen(false);
+  const logout = () => signOut({ callbackUrl: "/login" });
 
   return (
     <header className="main-nav">
@@ -66,7 +67,7 @@ export function MainNav() {
             </div>
           )}
 
-          <button type="button" className="btn btn-secondary" onClick={() => signOut({ callbackUrl: "/login" })}>
+          <button type="button" className="btn btn-secondary main-nav-logout-bar" onClick={logout}>
             Sair
           </button>
         </div>
@@ -97,6 +98,12 @@ export function MainNav() {
               </Link>
             ))}
         </nav>
+
+        {/* Duplicado do topo: no celular/tablet o CSS troca qual dos dois aparece,
+            para o "Sair" não ficar colado no botão de tema. */}
+        <button type="button" className="btn btn-secondary main-nav-logout-panel" onClick={logout}>
+          Sair
+        </button>
       </div>
     </header>
   );

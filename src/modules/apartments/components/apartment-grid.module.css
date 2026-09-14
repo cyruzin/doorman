@@ -70,16 +70,6 @@
   border-color: var(--color-accent);
 }
 
-/* Occupied/free hint — a left-edge accent only, so it never competes with the
-   accent-filled selected state above. */
-.cellFree {
-  border-left: 3px solid var(--color-success);
-}
-
-.cellOccupied {
-  border-left: 3px solid var(--color-warning);
-}
-
 /* ---------- mobile: floor picker + that floor's units ---------- */
 
 .mobilePanel {
@@ -115,6 +105,18 @@
 
 .mobileCell:hover {
   border-color: var(--color-accent);
+}
+
+/* Occupied/free hint — a left-edge accent only, so it never competes with the
+   accent-filled selected state above. Fica no fim do arquivo de propósito: a
+   mesma especificidade de `.cell`/`.mobileCell`, que redefinem `border` inteiro,
+   então quem vier depois ganha. */
+.cellFree {
+  border-left: 3px solid var(--color-success);
+}
+
+.cellOccupied {
+  border-left: 3px solid var(--color-warning);
 }
 
 /* Tablets get the phone layout in both orientations: the width covers small
