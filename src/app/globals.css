@@ -525,8 +525,9 @@ select.input {
   background: rgba(255, 255, 255, 0.12);
 }
 
-/* Só aparece dentro do menu hamburguer (ver media query abaixo). */
-.main-nav-logout-panel {
+/* Só aparecem dentro do menu hamburguer (ver media query abaixo). */
+.main-nav-logout-panel,
+.main-nav-panel-user {
   display: none;
 }
 
@@ -594,11 +595,31 @@ select.input {
     gap: 2px;
   }
 
+  /* Usuário e tema apertados entre o logo e o hamburguer deixavam a barra
+     confusa — descem para o topo do menu e a barra fica só logo + hamburguer. */
   .main-nav-actions {
+    display: none;
+  }
+
+  .main-nav-hamburger {
     margin-left: auto;
+  }
+
+  .main-nav-panel-user {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: var(--space-2);
-    padding-left: 0;
-    border-left: none;
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  }
+
+  .main-nav-panel-user .icon-btn {
+    color: var(--color-primary-contrast);
+  }
+
+  .main-nav-panel-user .icon-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
   }
 
   /* Sair sai da barra (colado no tema, fácil de errar o toque) e vira o último

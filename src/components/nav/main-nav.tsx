@@ -49,6 +49,15 @@ export function MainNav() {
   const closeMenu = () => setIsOpen(false);
   const logout = () => signOut({ callbackUrl: "/login" });
 
+  const userChip = session?.user && (
+    <div className="main-nav-user-chip">
+      <span className="main-nav-user-avatar" aria-hidden="true">
+        {name.charAt(0).toUpperCase()}
+      </span>
+      <span className="main-nav-user">{displayName}</span>
+    </div>
+  );
+
   return (
     <header className="main-nav">
       <div className="main-nav-bar">
@@ -59,14 +68,7 @@ export function MainNav() {
         <div className="main-nav-actions">
           <ThemeToggleButton />
 
-          {session?.user && (
-            <div className="main-nav-user-chip">
-              <span className="main-nav-user-avatar" aria-hidden="true">
-                {name.charAt(0).toUpperCase()}
-              </span>
-              <span className="main-nav-user">{displayName}</span>
-            </div>
-          )}
+          {userChip}
 
           <button type="button" className="btn btn-secondary main-nav-logout-bar" onClick={logout}>
             Sair
@@ -84,6 +86,13 @@ export function MainNav() {
       </div>
 
       <div className={isOpen ? "main-nav-panel open" : "main-nav-panel"}>
+        {/* Usuário e tema só cabem na barra no desktop; no celular/tablet o CSS
+            esconde os da barra e mostra estes, junto do menu. */}
+        <div className="main-nav-panel-user">
+          {userChip}
+          <ThemeToggleButton data-tooltip-end="" />
+        </div>
+
         <nav className="main-nav-links">
           {links
             .filter((link) => !link.resources || link.resources.some((r) => can(r, "read")))
