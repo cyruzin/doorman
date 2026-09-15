@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -52,7 +53,7 @@ export function MainNav() {
     <header className="main-nav">
       <div className="main-nav-bar">
         <Link href="/" className="main-nav-brand" onClick={closeMenu}>
-          St. Tropez
+          <Image src="/logo.png" alt="St. Tropez Residence" width={100} height={60} loading="eager" />
         </Link>
         <NavClock />
         <div className="main-nav-actions">

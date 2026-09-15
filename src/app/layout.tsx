@@ -33,7 +33,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
       <head>
-        {/* ponytail: React logs "Encountered a script tag..." in dev for this — the
+        {/* React logs "Encountered a script tag..." in dev for this — the
             trade is deliberate. next/script beforeInteractive moves it into the RSC
             payload, which runs after first paint and brings back the theme flash. */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />

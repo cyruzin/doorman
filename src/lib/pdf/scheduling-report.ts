@@ -30,7 +30,7 @@ const COLUMNS = [
   { label: "Operador", width: 85 },
 ];
 
-// ponytail: hard clip instead of wrapping — a second line per row would need
+// hard clip instead of wrapping — a second line per row would need
 // variable row heights and page-break recalculation.
 export function fitToWidth(text: string, font: PDFFont, size: number, maxWidth: number): string {
   if (font.widthOfTextAtSize(text, size) <= maxWidth) return text;

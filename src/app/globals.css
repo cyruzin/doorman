@@ -275,23 +275,35 @@ select.input {
   border-top-color: var(--color-neutral-0);
 }
 
-/* The nav bar is flush against the top of the viewport, so a bubble above the
-   trigger is clipped — flip it (and its arrow) to hang below instead. */
-.main-nav [data-tooltip]::after {
+/* A trigger flush against the top of the viewport (the whole nav bar, and the theme
+   toggle floating over the login screen) has the bubble above it clipped — flip it
+   (and its arrow) to hang below instead. */
+.main-nav [data-tooltip]::after,
+[data-tooltip-below]::after {
   top: calc(100% + 10px);
   bottom: auto;
 }
 
-.main-nav [data-tooltip]::before {
+.main-nav [data-tooltip]::before,
+[data-tooltip-below]::before {
   top: 100%;
   bottom: auto;
   border-top-color: transparent;
   border-bottom-color: var(--color-neutral-900);
 }
 
-:root[data-theme="dark"] .main-nav [data-tooltip]::before {
+:root[data-theme="dark"] .main-nav [data-tooltip]::before,
+:root[data-theme="dark"] [data-tooltip-below]::before {
   border-top-color: transparent;
   border-bottom-color: var(--color-neutral-0);
+}
+
+/* Centering on a trigger parked in the corner pushes half the bubble off-screen —
+   anchor it by its right edge instead. The arrow stays centered on the trigger. */
+[data-tooltip-end]::after {
+  left: auto;
+  right: 0;
+  transform: none;
 }
 
 /* ---------- segmented control (e.g. Inquilino / Proprietário) ---------- */
@@ -403,12 +415,19 @@ select.input {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: var(--space-3) var(--space-5);
+  /* o logo é o item mais alto da barra — padding vertical baixo aqui
+     deixa ele crescer sem engordar o header. Mobile restaura o padding normal. */
+  padding: var(--space-1) var(--space-5);
 }
 
 .main-nav-brand {
-  font-weight: 700;
-  font-size: var(--text-lg);
+  display: flex;
+  flex-shrink: 0;
+}
+
+.main-nav-brand img {
+  width: auto;
+  height: 3.5rem;
 }
 
 .main-nav-hamburger {
@@ -542,6 +561,14 @@ select.input {
    tablets and portrait, and `pointer: coarse` catches the big ones in landscape
    (an iPad Pro 13 is 1366px wide) without demoting a 1366px desktop with a mouse. */
 @media (max-width: 1024px), (pointer: coarse) {
+  .main-nav-bar {
+    padding: var(--space-3) var(--space-5);
+  }
+
+  .main-nav-brand img {
+    height: 2.5rem;
+  }
+
   .main-nav-hamburger {
     display: inline-flex;
   }

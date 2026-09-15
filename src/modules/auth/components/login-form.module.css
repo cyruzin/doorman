@@ -4,22 +4,16 @@
   max-width: 380px;
 }
 
-.badge {
-  width: 3rem;
-  height: 3rem;
-  border-radius: var(--radius-md);
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
-  margin-bottom: var(--space-4);
+.header {
+  text-align: center;
 }
 
-.title {
-  font-size: var(--text-xl);
-  font-weight: 700;
+.logo {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  margin: 0 auto var(--space-2);
 }
 
 .subtitle {
@@ -32,4 +26,26 @@
   width: 100%;
   padding: var(--space-3);
   margin-top: var(--space-2);
+}
+
+.passwordWrap {
+  position: relative;
+  display: flex;
+}
+
+/* Abre espaço para o botão não cobrir o fim da senha digitada. */
+.passwordInput {
+  padding-right: 3rem;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+}
+
+.passwordToggle:hover {
+  color: var(--color-text);
 }

@@ -60,3 +60,10 @@ npm run test           # vitest
 npx tsc --noEmit        # checagem de tipos
 npx prisma migrate dev # aplicar/gerar migrações (não roda sozinho, ver ARCHITECTURE.md)
 ```
+
+## Comentários no código
+
+Nada de marcadores de ferramenta ou de agente em comentários — sem prefixos
+como `ponytail:`, `claude:`, `ai:` ou similares. Comentário explica o código
+e a decisão por trás dele, em texto normal; o nome do processo que gerou o
+código não interessa a quem lê depois.

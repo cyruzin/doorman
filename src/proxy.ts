@@ -19,5 +19,7 @@ export const proxy = auth((req) => {
 
 export const config = {
   // API routes enforce their own checks (api-guard.ts) and return JSON, not a redirect.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  // Arquivos de imagem ficam de fora: o logo e os ícones do app precisam carregar
+  // na tela de login (sem sessão), e redirecioná-los devolve HTML no lugar do PNG.
+  matcher: ["/((?!api|_next/static|_next/image|.*\\.(?:png|jpe?g|gif|svg|ico|webp|avif)$).*)"],
 };
