@@ -9,7 +9,11 @@
     linear-gradient(160deg, var(--color-primary-700) 0%, var(--color-primary-600) 55%, var(--color-primary-500) 100%);
 }
 
-.themeToggle {
+/* Specificity tied to [data-tooltip] { position: relative } in globals.css (both are a
+   single class/attribute selector) matters here: the button carries data-tooltip, and in
+   prod the shared chunk with that rule can load after this one, letting it win the tie and
+   drop the absolute positioning. Scoping to .wrapper breaks the tie for good. */
+.wrapper .themeToggle {
   position: absolute;
   top: var(--space-4);
   right: var(--space-4);
