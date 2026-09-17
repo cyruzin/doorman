@@ -5,18 +5,18 @@ import { dashboardSummaryQueryKey } from "@/modules/home/hooks/use-dashboard-sum
 import { occupiedUnitsQueryKey } from "@/modules/apartments/hooks/use-occupied-units";
 import { unitOccupancyQueryKey } from "@/modules/apartments/hooks/use-unit-occupancy";
 import { residentsApi } from "../api";
-import type { ResidentListParams, ResidentWriteInput } from "../types";
+import type { ResidentListParams, ResidentUpdateInput, ResidentWriteInput } from "../types";
 
-const queryKey = ["residents"];
+export const residentsQueryKey = ["residents"];
 
 export function useResidents(params: ResidentListParams & { enabled?: boolean } = {}) {
   const { enabled = true, ...listParams } = params;
-  return useQuery({ queryKey: [...queryKey, listParams], queryFn: () => residentsApi.list(listParams), enabled });
+  return useQuery({ queryKey: [...residentsQueryKey, listParams], queryFn: () => residentsApi.list(listParams), enabled });
 }
 
 // A resident also changes who a unit shows as occupied by — everywhere that's cached.
 function invalidateResidentEffects(queryClient: ReturnType<typeof useQueryClient>) {
-  queryClient.invalidateQueries({ queryKey });
+  queryClient.invalidateQueries({ queryKey: residentsQueryKey });
   queryClient.invalidateQueries({ queryKey: unitOccupancyQueryKey });
   queryClient.invalidateQueries({ queryKey: occupiedUnitsQueryKey });
   queryClient.invalidateQueries({ queryKey: dashboardSummaryQueryKey });
@@ -33,7 +33,7 @@ export function useCreateResident() {
 export function useUpdateResident() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<ResidentWriteInput> }) => residentsApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: ResidentUpdateInput }) => residentsApi.update(id, data),
     onSuccess: () => invalidateResidentEffects(queryClient),
   });
 }

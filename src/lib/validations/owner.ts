@@ -12,6 +12,13 @@ export const ownerSchema = z.object({
   vehicles: z.array(vehicleSchema),
 });
 
-export const ownerUpdateSchema = ownerSchema.partial();
+// `password` is the re-authentication of the logged-in user, required only when the update
+// deactivates the owner — it's not part of the owner's own data, hence the extend.
+export const ownerUpdateSchema = ownerSchema.partial().extend({ password: z.string().optional() });
+
+export const unlinkUnitsSchema = z.object({
+  units: z.array(z.string().min(1)).min(1, "Selecione ao menos um apartamento"),
+  password: z.string().min(1, "Confirme sua senha"),
+});
 
 export type OwnerInput = z.infer<typeof ownerSchema>;

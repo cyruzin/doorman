@@ -23,7 +23,8 @@ export const residentSchema = residentBaseSchema.refine(requiresOwnerId, {
   path: ["ownerId"],
 });
 
-export const residentUpdateSchema = residentBaseSchema.partial().refine(
+// `password` re-authenticates the logged-in user, required only when deactivating.
+export const residentUpdateSchema = residentBaseSchema.partial().extend({ password: z.string().optional() }).refine(
   (data) => data.isOwner === undefined || requiresOwnerId({ isOwner: data.isOwner, ownerId: data.ownerId }),
   { message: "Selecione o proprietário", path: ["ownerId"] },
 );

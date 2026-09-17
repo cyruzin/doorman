@@ -17,6 +17,8 @@ export interface Resident {
   email: string | null;
   unit: string;
   active: boolean;
+  /** Name of the user who deactivated the record — the "Operador" column. */
+  deactivatedBy: string | null;
   isOwner: boolean;
   ownerId: string | null;
   owner: { id: string; name: string } | null;
@@ -37,6 +39,9 @@ export interface ResidentWriteInput {
   phones: { number: string; isWhatsapp: boolean }[];
   vehicles: { plate?: string; model?: string }[];
 }
+
+/** Deactivating asks for the logged-in user's password as a re-authentication. */
+export type ResidentUpdateInput = Partial<ResidentWriteInput> & { password?: string };
 
 export type ResidentStatusFilter = "active" | "inactive" | "all";
 

@@ -18,10 +18,19 @@ interface OwnerUnitGridProps {
    * on units not already claimed by someone else. Omit — or leave undefined while still
    * loading — to skip the hint entirely. */
   occupiedUnits?: string[];
+  /** Units this owner already holds and can't drop here — removing one is a destructive
+   * change that belongs to "Desvincular" (password + warning), not to a plain edit. */
+  lockedUnits?: string[];
 }
 
 // Multi-select twin of ApartmentGrid — an owner can hold several units.
-export function OwnerUnitGrid({ selectedUnits, onToggle, claimedUnits = {}, occupiedUnits }: OwnerUnitGridProps) {
+export function OwnerUnitGrid({
+  selectedUnits,
+  onToggle,
+  claimedUnits = {},
+  occupiedUnits,
+  lockedUnits = [],
+}: OwnerUnitGridProps) {
   const floors = getFloors();
   const positions = Array.from({ length: MAX_UNITS_PER_FLOOR }, (_, i) => i + 1);
   // Starts on the lowest selected unit's floor so editing on mobile shows it selected, not floor 1.
@@ -31,8 +40,23 @@ export function OwnerUnitGrid({ selectedUnits, onToggle, claimedUnits = {}, occu
   const mobileUnits = Array.from({ length: getUnitsPerFloor(mobileFloor) }, (_, i) => getUnitNumber(mobileFloor, i + 1));
   const isSelected = (unit: string) => selectedUnits.includes(unit);
   const claimTooltip = (unit: string) => (claimedUnits[unit] ? `${claimedUnits[unit]} é o proprietário` : undefined);
+  const isLocked = (unit: string) => lockedUnits.includes(unit);
+  const cellClass = (unit: string, base: string) => {
+    if (isLocked(unit)) return `${base} ${styles.cellLocked}`;
+    if (isSelected(unit)) return `${base} ${styles.cellSelected}`;
+    if (claimTooltip(unit)) return `${base} ${styles.cellClaimed}`;
+    if (occupiedUnits) return `${base} ${occupiedUnits.includes(unit) ? styles.cellOccupied : styles.cellFree}`;
+    return base;
+  };
   const statusTooltip = (unit: string) =>
-    claimTooltip(unit) ?? (occupiedUnits ? (occupiedUnits.includes(unit) ? "Em uso" : "Livre") : undefined);
+    claimTooltip(unit) ??
+    (isLocked(unit)
+      ? 'Use "Desvincular" para remover'
+      : occupiedUnits
+        ? occupiedUnits.includes(unit)
+          ? "Em uso"
+          : "Livre"
+        : undefined);
 
   return (
     <>
@@ -59,21 +83,14 @@ export function OwnerUnitGrid({ selectedUnits, onToggle, claimedUnits = {}, occu
                   const unit = getUnitNumber(floor, position);
                   const selected = isSelected(unit);
                   const claimed = claimTooltip(unit);
-                  const className = selected
-                    ? `${styles.cell} ${styles.cellSelected}`
-                    : claimed
-                      ? `${styles.cell} ${styles.cellClaimed}`
-                      : occupiedUnits
-                        ? `${styles.cell} ${occupiedUnits.includes(unit) ? styles.cellOccupied : styles.cellFree}`
-                        : styles.cell;
                   return (
                     <td key={floor} className={styles.cellWrapper} data-tooltip={statusTooltip(unit)}>
                       <button
                         type="button"
-                        className={className}
+                        className={cellClass(unit, styles.cell)}
                         aria-pressed={selected}
-                        aria-disabled={!!claimed}
-                        onClick={() => !claimed && onToggle(unit)}
+                        aria-disabled={!!claimed || isLocked(unit)}
+                        onClick={() => !claimed && !isLocked(unit) && onToggle(unit)}
                       >
                         {unit}
                       </button>
@@ -109,22 +126,15 @@ export function OwnerUnitGrid({ selectedUnits, onToggle, claimedUnits = {}, occu
             {mobileUnits.map((unit) => {
               const selected = isSelected(unit);
               const claimed = claimTooltip(unit);
-              const className = selected
-                ? `${styles.mobileCell} ${styles.cellSelected}`
-                : claimed
-                  ? `${styles.mobileCell} ${styles.cellClaimed}`
-                  : occupiedUnits
-                    ? `${styles.mobileCell} ${occupiedUnits.includes(unit) ? styles.cellOccupied : styles.cellFree}`
-                    : styles.mobileCell;
               return (
                 <button
                   key={unit}
                   type="button"
-                  className={className}
+                  className={cellClass(unit, styles.mobileCell)}
                   aria-pressed={selected}
-                  aria-disabled={!!claimed}
+                  aria-disabled={!!claimed || isLocked(unit)}
                   data-tooltip={statusTooltip(unit)}
-                  onClick={() => !claimed && onToggle(unit)}
+                  onClick={() => !claimed && !isLocked(unit) && onToggle(unit)}
                 >
                   {unit}
                 </button>

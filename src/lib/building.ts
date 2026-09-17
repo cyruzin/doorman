@@ -26,6 +26,12 @@ export function getFloorFromUnit(unit: string): number {
   return Number(unit.slice(0, -2));
 }
 
+// Apartment numbers are numeric strings of different lengths ("801", "1501"), so the
+// default string sort gets them wrong — every list of units goes through here.
+export function sortUnits(units: string[]): string[] {
+  return [...units].sort((a, b) => Number(a) - Number(b));
+}
+
 export function getAllUnits(): BuildingUnit[] {
   const units: BuildingUnit[] = [];
   for (const floor of getFloors()) {

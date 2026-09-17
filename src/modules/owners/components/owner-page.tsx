@@ -8,10 +8,12 @@ import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Pagination } from "@/components/pagination/pagination";
-import { useCreateOwner, useDeleteOwner, useOwners, useUpdateOwner } from "../hooks/use-owners";
+import { ownerDeactivationWarning } from "../deactivation-warning";
+import { useCreateOwner, useDeleteOwner, useOwners, useUnlinkOwnerUnits, useUpdateOwner } from "../hooks/use-owners";
 import type { Owner, OwnerInput, OwnerStatusFilter } from "../types";
 import { OwnerForm } from "./owner-form";
 import { OwnerTable } from "./owner-table";
+import { UnlinkUnitsModal } from "./unlink-units-modal";
 import styles from "./owner-page.module.css";
 
 const PAGE_SIZE = 20;
@@ -52,6 +54,8 @@ export function OwnerPage({ isCreating, onCreatingChange, initialSearch, onEditi
   const createOwner = useCreateOwner();
   const updateOwner = useUpdateOwner();
   const deleteOwner = useDeleteOwner();
+  const unlinkUnits = useUnlinkOwnerUnits();
+  const [unlinking, setUnlinking] = useState<Owner | null>(null);
 
   const [manualEditing, setManualEditing] = useState<Owner | null>(null);
   const editing = isCreating ? null : manualEditing;
@@ -102,12 +106,13 @@ export function OwnerPage({ isCreating, onCreatingChange, initialSearch, onEditi
     }
   };
 
-  const handleToggleActive = (owner: Owner) => {
+  const handleToggleActive = async (owner: Owner) => {
     const activating = !owner.active;
+    const warning = activating ? undefined : await ownerDeactivationWarning(owner);
     requestConfirm(
-      async () => {
+      async (password) => {
         try {
-          await updateOwner.mutateAsync({ id: owner.id, data: { active: activating } });
+          await updateOwner.mutateAsync({ id: owner.id, data: { active: activating, password } });
           showToast(activating ? "Proprietário reativado" : "Proprietário desativado", "success");
         } catch (err) {
           showToast(extractApiErrorMessage(err, "Erro ao atualizar status do proprietário"), "error");
@@ -116,11 +121,28 @@ export function OwnerPage({ isCreating, onCreatingChange, initialSearch, onEditi
       activating
         ? { title: "Reativar proprietário", description: `Marcar ${owner.name} como ativo novamente?`, confirmLabel: "Reativar" }
         : {
+            requirePassword: true,
             title: "Desativar proprietário",
-            description: `${owner.name} deixará de aparecer na listagem ativa, mas o registro é mantido.`,
+            description: `${owner.name} deixará de aparecer nos apartamentos, no mezanino e nos agendamentos. O registro é mantido e continua visível na busca por inativos.`,
+            warning,
             confirmLabel: "Desativar",
           },
     );
+  };
+
+  const handleUnlink = async (units: string[], password: string) => {
+    if (!unlinking) return;
+    try {
+      const { deactivated } = await unlinkUnits.mutateAsync({ id: unlinking.id, data: { units, password } });
+      showToast(
+        deactivated ? "Proprietário desvinculado e desativado" : `Apartamento(s) desvinculado(s): ${units.join(", ")}`,
+        "success",
+      );
+      setUnlinking(null);
+    } catch (err) {
+      // Rethrown so the modal keeps the selection and shows why it failed (wrong password, etc.).
+      throw new Error(extractApiErrorMessage(err, "Erro ao desvincular apartamento(s)"));
+    }
   };
 
   const handleDelete = (owner: Owner) => {
@@ -187,12 +209,17 @@ export function OwnerPage({ isCreating, onCreatingChange, initialSearch, onEditi
                 canDelete={canDelete}
                 onEdit={handleEdit}
                 onToggleActive={handleToggleActive}
+                onUnlink={setUnlinking}
                 onDelete={handleDelete}
               />
               <Pagination page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPageChange={setPage} />
             </>
           )}
         </>
+      )}
+
+      {unlinking && (
+        <UnlinkUnitsModal owner={unlinking} onClose={() => setUnlinking(null)} onConfirm={handleUnlink} />
       )}
     </div>
   );

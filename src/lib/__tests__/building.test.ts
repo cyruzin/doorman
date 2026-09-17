@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getAllUnits, getFloors, getUnitNumber, getUnitsPerFloor } from "@/lib/building";
+import { getAllUnits, getFloors, getUnitNumber, getUnitsPerFloor, sortUnits } from "@/lib/building";
 
 describe("building layout", () => {
   it("has 19 floors", () => {
@@ -23,5 +23,17 @@ describe("building layout", () => {
 
   it("generates 110 total units (18 * 6 + 2)", () => {
     expect(getAllUnits()).toHaveLength(110);
+  });
+});
+
+describe("sortUnits", () => {
+  it("orders by apartment number, not by string", () => {
+    expect(sortUnits(["803", "1501", "801", "1101", "802"])).toEqual(["801", "802", "803", "1101", "1501"]);
+  });
+
+  it("leaves the input array untouched", () => {
+    const units = ["802", "801"];
+    sortUnits(units);
+    expect(units).toEqual(["802", "801"]);
   });
 });

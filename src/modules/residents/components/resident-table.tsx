@@ -10,13 +10,25 @@ interface ResidentTableProps {
   canDelete: boolean;
   onEdit: (resident: Resident) => void;
   onToggleActive: (resident: Resident) => void;
+  onUnlink: (resident: Resident) => void;
   onDelete: (resident: Resident) => void;
 }
 
-export function ResidentTable({ items, canUpdate, canDelete, onEdit, onToggleActive, onDelete }: ResidentTableProps) {
+export function ResidentTable({
+  items,
+  canUpdate,
+  canDelete,
+  onEdit,
+  onToggleActive,
+  onUnlink,
+  onDelete,
+}: ResidentTableProps) {
   if (items.length === 0) {
     return <p className="text-muted">Nenhum registro encontrado.</p>;
   }
+
+  // Only meaningful once something is inactive — no point in an empty column on the active listing.
+  const showOperator = items.some((resident) => !resident.active);
 
   return (
     <div className="table-wrapper card">
@@ -27,6 +39,7 @@ export function ResidentTable({ items, canUpdate, canDelete, onEdit, onToggleAct
             <th>Apartamento</th>
             <th>CPF</th>
             <th>Status</th>
+            {showOperator && <th>Operador</th>}
             <th>Telefone</th>
             <th>Veículo</th>
             {(canUpdate || canDelete) && <th aria-label="Ações" />}
@@ -46,6 +59,7 @@ export function ResidentTable({ items, canUpdate, canDelete, onEdit, onToggleAct
                   {resident.active ? "Ativo" : "Inativo"}
                 </span>
               </td>
+              {showOperator && <td>{resident.active ? "—" : (resident.deactivatedBy ?? "—")}</td>}
               <td>
                 {resident.phones.length === 0 ? (
                   "—"
@@ -67,6 +81,13 @@ export function ResidentTable({ items, canUpdate, canDelete, onEdit, onToggleAct
                     {canUpdate && (
                       <button type="button" className="btn btn-secondary" onClick={() => onEdit(resident)}>
                         Editar
+                      </button>
+                    )}
+                    {/* A resident belongs to a single apartment, so releasing it always ends in
+                        a deactivation — the modal spells that out before confirming. */}
+                    {canDelete && resident.active && (
+                      <button type="button" className="btn btn-secondary" onClick={() => onUnlink(resident)}>
+                        Desvincular
                       </button>
                     )}
                     {canDelete && (

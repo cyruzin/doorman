@@ -8,6 +8,7 @@ import { useToast } from "@/components/toast/toast-provider";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Pagination } from "@/components/pagination/pagination";
+import { freedUnitsWarning } from "@/modules/apartments/freed-units";
 import { useCreateResident, useDeleteResident, useResidents, useUpdateResident } from "../hooks/use-residents";
 import type { Resident, ResidentStatusFilter, ResidentWriteInput } from "../types";
 import { ResidentForm } from "./resident-form";
@@ -102,12 +103,20 @@ export function ResidentPage({ isCreating, onCreatingChange, initialSearch, onEd
     }
   };
 
-  const handleToggleActive = (resident: Resident) => {
+  const handleToggleActive = async (resident: Resident) => {
     const activating = !resident.active;
+    const warning = activating
+      ? undefined
+      : [
+          resident.isOwner ? `O cadastro de proprietário de ${resident.name} não é afetado.` : undefined,
+          await freedUnitsWarning([resident.id]),
+        ]
+          .filter(Boolean)
+          .join(" ") || undefined;
     requestConfirm(
-      async () => {
+      async (password) => {
         try {
-          await updateResident.mutateAsync({ id: resident.id, data: { active: activating } });
+          await updateResident.mutateAsync({ id: resident.id, data: { active: activating, password } });
           showToast(activating ? "Morador reativado" : "Morador desativado", "success");
         } catch (err) {
           showToast(extractApiErrorMessage(err, "Erro ao atualizar status do morador"), "error");
@@ -116,10 +125,43 @@ export function ResidentPage({ isCreating, onCreatingChange, initialSearch, onEd
       activating
         ? { title: "Reativar morador", description: `Marcar ${resident.name} como ativo novamente?`, confirmLabel: "Reativar" }
         : {
+            requirePassword: true,
             title: "Desativar morador",
-            description: `${resident.name} deixará de aparecer na listagem ativa, mas o registro é mantido.`,
+            description: `${resident.name} deixará de aparecer nos apartamentos, no mezanino e nos agendamentos. O registro é mantido e continua visível na busca por inativos.`,
+            warning,
             confirmLabel: "Desativar",
           },
+    );
+  };
+
+  // A resident lives in exactly one apartment, so releasing it always closes the resident
+  // record. When that person is also the unit's owner it stops there: they moved out, they
+  // did not sell — the owner record is untouched and the apartment is free to rent.
+  const handleUnlink = async (resident: Resident) => {
+    const freed = await freedUnitsWarning([resident.id]);
+    requestConfirm(
+      async (password) => {
+        try {
+          await updateResident.mutateAsync({ id: resident.id, data: { active: false, password } });
+          showToast(`${resident.name} desvinculado do apartamento ${resident.unit}`, "success");
+        } catch (err) {
+          showToast(extractApiErrorMessage(err, "Erro ao desvincular morador"), "error");
+        }
+      },
+      {
+        requirePassword: true,
+        title: "Desvincular apartamento",
+        description: `Desvincular ${resident.name} do apartamento ${resident.unit}?`,
+        warning: [
+          resident.isOwner
+            ? `${resident.name} continua proprietário do apartamento ${resident.unit}, encerra só o cadastro de morador.`
+            : `${resident.name} ficará sem apartamento e será desativado.`,
+          freed,
+        ]
+          .filter(Boolean)
+          .join(" "),
+        confirmLabel: "Desvincular",
+      },
     );
   };
 
@@ -187,6 +229,7 @@ export function ResidentPage({ isCreating, onCreatingChange, initialSearch, onEd
                 canDelete={canDelete}
                 onEdit={handleEdit}
                 onToggleActive={handleToggleActive}
+                onUnlink={handleUnlink}
                 onDelete={handleDelete}
               />
               <Pagination page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPageChange={setPage} />

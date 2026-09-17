@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const requirePermission = vi.fn();
 vi.mock("@/lib/api-guard", () => ({
@@ -27,6 +27,11 @@ vi.mock("@/lib/permissions-db", () => ({
   can: (...args: unknown[]) => can(...args),
 }));
 
+const requirePasswordConfirmation = vi.fn();
+vi.mock("@/lib/verify-password", () => ({
+  requirePasswordConfirmation: (...args: unknown[]) => requirePasswordConfirmation(...args),
+}));
+
 import { PATCH } from "../route";
 
 function params(id: string) {
@@ -50,6 +55,8 @@ describe("PATCH /api/residents/[id]", () => {
     ownerUnitFindFirst.mockReset();
     can.mockReset();
     can.mockResolvedValue(true);
+    requirePasswordConfirmation.mockReset();
+    requirePasswordConfirmation.mockResolvedValue(null);
   });
 
   it("blocks a DOORMAN from actually flipping active status", async () => {
@@ -61,6 +68,60 @@ describe("PATCH /api/residents/[id]", () => {
 
     expect(res.status).toBe(403);
     expect(update).not.toHaveBeenCalled();
+  });
+
+  it("records who deactivated the resident, after confirming their password", async () => {
+    requirePermission.mockResolvedValue({ session: { user: { role: "ADMIN", id: "u1", name: "Cyro" } }, error: null });
+    findUnique.mockResolvedValue({ active: true, unit: "101", isOwner: false });
+    update.mockResolvedValue({ id: "r1" });
+
+    const res = await PATCH(patchRequest({ active: false, password: "secret" }), params("r1"));
+
+    expect(res.status).toBe(200);
+    expect(requirePasswordConfirmation).toHaveBeenCalledWith("u1", "secret");
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ active: false, deactivatedBy: "Cyro" }) }),
+    );
+  });
+
+  it("refuses to deactivate when the password doesn't check out", async () => {
+    requirePermission.mockResolvedValue({ session: { user: { role: "ADMIN", id: "u1", name: "Cyro" } }, error: null });
+    findUnique.mockResolvedValue({ active: true, unit: "101", isOwner: false });
+    requirePasswordConfirmation.mockResolvedValue(NextResponse.json({ error: "Senha incorreta" }, { status: 401 }));
+
+    const res = await PATCH(patchRequest({ active: false, password: "wrong" }), params("r1"));
+
+    expect(res.status).toBe(401);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("leaves the owner record alone when the resident is also the unit's owner", async () => {
+    requirePermission.mockResolvedValue({ session: { user: { role: "ADMIN", id: "u1", name: "Cyro" } }, error: null });
+    findUnique.mockResolvedValue({ active: true, unit: "506", isOwner: true });
+    update.mockResolvedValue({ id: "r1" });
+
+    const res = await PATCH(patchRequest({ active: false, password: "secret" }), params("r1"));
+
+    expect(res.status).toBe(200);
+    // Moving out is not selling: only the resident row goes inactive, the ownership link stays.
+    // (The prisma mock has no `owner` model at all, so any write to it would blow up here.)
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.not.objectContaining({ isOwner: expect.anything(), ownerId: expect.anything() }),
+      }),
+    );
+  });
+
+  it("clears the operator when the resident is reactivated", async () => {
+    requirePermission.mockResolvedValue({ session: { user: { role: "ADMIN", id: "u1", name: "Cyro" } }, error: null });
+    findUnique.mockResolvedValue({ active: false, unit: "101", isOwner: false });
+    update.mockResolvedValue({ id: "r1" });
+
+    const res = await PATCH(patchRequest({ active: true }), params("r1"));
+
+    expect(res.status).toBe(200);
+    expect(requirePasswordConfirmation).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ deactivatedBy: null }) }));
   });
 
   it("skips re-resolving the owner link when unit/isOwner/ownerId are untouched", async () => {

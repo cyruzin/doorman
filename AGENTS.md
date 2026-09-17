@@ -67,3 +67,15 @@ Nada de marcadores de ferramenta ou de agente em comentários — sem prefixos
 como `ponytail:`, `claude:`, `ai:` ou similares. Comentário explica o código
 e a decisão por trás dele, em texto normal; o nome do processo que gerou o
 código não interessa a quem lê depois.
+
+## Textos para o usuário
+
+Nada de travessão (`—`) em texto que o usuário lê: modal, toast, tooltip,
+mensagem de erro da API, recado gerado pelo sistema, PDF. Use vírgula, ponto
+ou dois-pontos.
+
+- Bom: `Use o botão Desvincular, desativar tira todos de uma vez.`
+- Ruim: `Use o botão Desvincular — desativar tira todos de uma vez.`
+
+Vale também para as respostas do agente no chat. O `—` sozinho como
+placeholder de célula vazia em tabela continua valendo, ali ele não é texto.

@@ -1,5 +1,5 @@
 import { api } from "@/lib/axios";
-import type { Owner, OwnerInput, OwnerListParams, OwnerListResult } from "./types";
+import type { Owner, OwnerInput, OwnerListParams, OwnerListResult, OwnerUpdateInput, UnlinkUnitsInput } from "./types";
 
 export const ownersApi = {
   list: async (params: OwnerListParams = {}): Promise<OwnerListResult> => (await api.get("/owners", { params })).data,
@@ -7,7 +7,9 @@ export const ownersApi = {
   claimedUnits: async (excludeOwnerId?: string): Promise<Record<string, string>> =>
     (await api.get("/owners/claimed-units", { params: excludeOwnerId ? { excludeOwnerId } : undefined })).data.claims,
   create: async (data: OwnerInput): Promise<Owner> => (await api.post("/owners", data)).data,
-  update: async (id: string, data: Partial<OwnerInput>): Promise<Owner> => (await api.patch(`/owners/${id}`, data)).data,
+  update: async (id: string, data: OwnerUpdateInput): Promise<Owner> => (await api.patch(`/owners/${id}`, data)).data,
+  unlinkUnits: async (id: string, data: UnlinkUnitsInput): Promise<{ deactivated: boolean }> =>
+    (await api.post(`/owners/${id}/unlink`, data)).data,
   remove: async (id: string): Promise<void> => {
     await api.delete(`/owners/${id}`);
   },

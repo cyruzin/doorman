@@ -109,7 +109,7 @@ export async function buildSchedulingReportPdf({
   };
 
   const drawPageHeader = () => {
-    page.drawText(`Relatório de agendamentos — ${REPORT_ROOM_LABELS[room]}`, {
+    page.drawText(`Relatório de agendamentos: ${REPORT_ROOM_LABELS[room]}`, {
       x: MARGIN,
       y,
       size: 16,

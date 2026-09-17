@@ -93,6 +93,26 @@
   transform: none;
 }
 
+/* Unidade do próprio proprietário que não sai por aqui (só pelo Desvincular): bloqueada
+   como a de outro dono, com a borda em accent mantendo a leitura de "é dele". */
+.cellLocked {
+  background: var(--color-neutral-200);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cellLocked:hover {
+  background: var(--color-neutral-200);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  border-left-color: var(--color-accent);
+  transform: none;
+}
+
+:root[data-theme="dark"] .cellLocked,
 :root[data-theme="dark"] .cellClaimed {
   background: var(--color-border-strong);
 }

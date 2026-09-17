@@ -118,6 +118,7 @@ describe("ResidentForm", () => {
       email: null,
       unit: "101",
       active: true,
+      deactivatedBy: null,
       isOwner: true,
       ownerId: "o1",
       owner: { id: "o1", name: "Owner Person" },
@@ -140,6 +141,7 @@ describe("ResidentForm", () => {
       email: null,
       unit: "101",
       active: true,
+      deactivatedBy: null,
       isOwner: false,
       ownerId: null,
       owner: null,
@@ -168,6 +170,7 @@ describe("ResidentForm", () => {
       email: null,
       unit: "101",
       active: true,
+      deactivatedBy: null,
       isOwner: false,
       ownerId: null,
       owner: null,
@@ -198,6 +201,7 @@ describe("ResidentForm", () => {
       email: null,
       unit: "506",
       active: true,
+      deactivatedBy: null,
       isOwner: true,
       ownerId: "o1",
       owner: { id: "o1", name: "Cyro Dubeux" },
@@ -212,7 +216,7 @@ describe("ResidentForm", () => {
     await userEvent.click(unitButton("202"));
     await screen.findByText(/maria lúcia já está cadastrado\(a\) como proprietário/i);
     expect(screen.queryByRole("checkbox", { name: "É proprietário" })).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Nome")).toHaveValue("Cyro Dubeux");
+    expect(await screen.findByLabelText("Nome")).toHaveValue("Cyro Dubeux");
 
     await userEvent.click(unitButton("506"));
     expect(await screen.findByRole("checkbox", { name: "É proprietário" })).toBeChecked();
@@ -231,6 +235,7 @@ describe("ResidentForm", () => {
       email: null,
       unit: "506",
       active: true,
+      deactivatedBy: null,
       isOwner: true,
       ownerId: "o1",
       owner: { id: "o1", name: "Cyro Dubeux" },
@@ -246,7 +251,7 @@ describe("ResidentForm", () => {
 
     expect(await screen.findByText(/maria lúcia é o\(a\) proprietário\(a\) deste apartamento/i)).toBeInTheDocument();
     expect(screen.queryByRole("checkbox", { name: "É proprietário" })).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Nome")).toHaveValue("Cyro Dubeux");
+    expect(await screen.findByLabelText("Nome")).toHaveValue("Cyro Dubeux");
   });
 
   it("hints Livre/Em uso per unit once occupancy data has loaded", () => {

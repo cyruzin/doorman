@@ -19,7 +19,7 @@ export async function POST() {
 
   const notice = await prisma.notice.create({
     data: {
-      message: `Logout automático realizado — ${formatShiftHour(mostRecentShiftBoundary())}. Sessão encerrada automaticamente conforme rotina de segurança do sistema.`,
+      message: `Logout automático realizado às ${formatShiftHour(mostRecentShiftBoundary())}. Sessão encerrada automaticamente conforme rotina de segurança do sistema.`,
       showOnHome: true,
       isAutomatic: true,
       authorUsername: session.user.name ?? "—",

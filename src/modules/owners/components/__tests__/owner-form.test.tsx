@@ -80,6 +80,7 @@ describe("OwnerForm", () => {
           cpf: "12345678900",
           email: null,
           active: true,
+          deactivatedBy: null,
           units: ["101", "302"],
           residents: [],
           phones: [],

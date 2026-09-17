@@ -110,3 +110,26 @@ scripts/
 - Escritas um-para-muitos no Prisma (telefones, veículos de um morador) usam
   o padrão `{ deleteMany: {}, create: [...] }` para substituir a lista
   inteira numa única query de update.
+- **Proprietário e morador são a mesma pessoa em duas linhas** (`Resident.isOwner`
+  + `ownerId`). Desativar o `Owner` derruba junto os `Resident` vinculados —
+  sem isso ele continua aparecendo em apartamentos/mezanino/agendamentos, que
+  filtram por `Resident.active` (ver `src/app/api/owners/[id]/route.ts`). O
+  caminho inverso **não** é simétrico: quem deixa de morar pode continuar dono.
+- **Re-autenticação em ação destrutiva**: desativar um morador/proprietário e
+  desvincular apartamento exigem a senha do usuário logado no próprio request
+  (`requirePasswordConfirmation`, `src/lib/verify-password.ts`) — não em um
+  endpoint de verificação separado, que o cliente poderia pular. Quem desativou
+  fica em `deactivatedBy` (coluna "Operador" na listagem de inativos).
+- Venda de um apartamento entre vários: use `POST /api/owners/[id]/unlink`, não
+  a desativação — desativar tira todas as unidades do proprietário de uma vez.
+  Pelo mesmo motivo o PATCH **recusa** remover unidade de proprietário ativo
+  (só o `/unlink` remove, com senha e aviso); num proprietário inativo a
+  remoção é liberada, que é como se resolve um conflito antes de reativar.
+- **Reativar proprietário**: as `OwnerUnit` continuam gravadas enquanto ele está
+  inativo, então reativar devolve todos os apartamentos. O PATCH bloqueia a
+  reativação se alguma dessas unidades já tiver outro proprietário ativo — dois
+  donos ativos na mesma unidade quebrariam todo `findFirst` de "o proprietário
+  deste apartamento".
+- Desvincular um morador que é `isOwner` encerra **só** o cadastro de morador
+  (ele deixou de morar, não de ser dono) — o apartamento fica livre para
+  locação e continua exibindo o proprietário.

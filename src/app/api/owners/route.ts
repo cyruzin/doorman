@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sortUnits } from "@/lib/building";
 import { requirePermission } from "@/lib/api-guard";
 import { ownerSchema } from "@/lib/validations/owner";
 import { parsePagination, type PaginatedResult } from "@/lib/pagination";
@@ -15,7 +16,7 @@ const ownerInclude = {
 } as const;
 
 function toOwnerResponse(owner: { units: { unit: string }[] } & Record<string, unknown>) {
-  return { ...owner, units: owner.units.map((u) => u.unit) };
+  return { ...owner, units: sortUnits(owner.units.map((u) => u.unit)) };
 }
 
 export async function GET(req: NextRequest) {

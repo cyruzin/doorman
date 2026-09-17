@@ -47,7 +47,7 @@ describe("POST /api/notices/shift-logout", () => {
     expect(create).toHaveBeenCalledWith({
       data: {
         message:
-          "Logout automático realizado — 18h. Sessão encerrada automaticamente conforme rotina de segurança do sistema.",
+          "Logout automático realizado às 18h. Sessão encerrada automaticamente conforme rotina de segurança do sistema.",
         showOnHome: true,
         isAutomatic: true,
         authorUsername: "raimundo",

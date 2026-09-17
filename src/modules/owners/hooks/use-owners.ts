@@ -4,8 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { dashboardSummaryQueryKey } from "@/modules/home/hooks/use-dashboard-summary";
 import { occupiedUnitsQueryKey } from "@/modules/apartments/hooks/use-occupied-units";
 import { unitOccupancyQueryKey } from "@/modules/apartments/hooks/use-unit-occupancy";
+import { residentsQueryKey } from "@/modules/residents/hooks/use-residents";
 import { ownersApi } from "../api";
-import type { OwnerInput, OwnerListParams } from "../types";
+import type { OwnerListParams, OwnerUpdateInput, UnlinkUnitsInput } from "../types";
+import type { OwnerInput } from "../types";
 
 const queryKey = ["owners"];
 
@@ -22,9 +24,11 @@ export function useClaimedUnits(excludeOwnerId?: string) {
 }
 
 // An owner also changes who a unit shows as occupied by — everywhere that's cached.
-// `queryKey` alone already covers claimed-units, nested under the same prefix.
+// `queryKey` alone already covers claimed-units, nested under the same prefix. Residents
+// are in the list because deactivating an owner deactivates their resident record too.
 function invalidateOwnerEffects(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey });
+  queryClient.invalidateQueries({ queryKey: residentsQueryKey });
   queryClient.invalidateQueries({ queryKey: unitOccupancyQueryKey });
   queryClient.invalidateQueries({ queryKey: occupiedUnitsQueryKey });
   queryClient.invalidateQueries({ queryKey: dashboardSummaryQueryKey });
@@ -41,7 +45,15 @@ export function useCreateOwner() {
 export function useUpdateOwner() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<OwnerInput> }) => ownersApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: OwnerUpdateInput }) => ownersApi.update(id, data),
+    onSuccess: () => invalidateOwnerEffects(queryClient),
+  });
+}
+
+export function useUnlinkOwnerUnits() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UnlinkUnitsInput }) => ownersApi.unlinkUnits(id, data),
     onSuccess: () => invalidateOwnerEffects(queryClient),
   });
 }

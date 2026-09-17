@@ -54,20 +54,23 @@ model RolePermission {
 // to the canonical Owner record instead of duplicating their name/cpf/email —
 // the API derives those three fields from the linked Owner on write.
 model Resident {
-  id        String    @id @default(cuid())
-  name      String
-  cpf       String?
-  email     String?
-  unit      String
+  id            String    @id @default(cuid())
+  name          String
+  cpf           String?
+  email         String?
+  unit          String
   // Soft-deleted instead of removed, so old residents stay searchable.
-  active    Boolean   @default(true)
-  isOwner   Boolean   @default(false)
-  ownerId   String?
-  owner     Owner?    @relation(fields: [ownerId], references: [id])
-  phones    Phone[]
-  vehicles  Vehicle[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  active        Boolean   @default(true)
+  // Who deactivated the record (name of the logged-in user), shown as "Operador" in the
+  // inactive listing. Cleared on reactivation.
+  deactivatedBy String?
+  isOwner       Boolean   @default(false)
+  ownerId       String?
+  owner         Owner?    @relation(fields: [ownerId], references: [id])
+  phones        Phone[]
+  vehicles      Vehicle[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([name])
   @@index([unit])
@@ -75,22 +78,24 @@ model Resident {
 }
 
 model Owner {
-  id        String      @id @default(cuid())
-  name      String
+  id            String      @id @default(cuid())
+  name          String
   // The dedup identifier — required going forward (enforced in the Zod
   // schema, not here: a hard NOT NULL would break legacy rows without one).
   // Unique constraint allows multiple NULLs (SQL semantics) but rejects a
   // second owner with the same CPF.
-  cpf       String?     @unique
-  email     String?
-  active    Boolean     @default(true)
-  phones    Phone[]
-  vehicles  Vehicle[]
-  units     OwnerUnit[]
+  cpf           String?     @unique
+  email         String?
+  active        Boolean     @default(true)
+  // Same as Resident.deactivatedBy — who turned this record off.
+  deactivatedBy String?
+  phones        Phone[]
+  vehicles      Vehicle[]
+  units         OwnerUnit[]
   // Residents who are also this owner (isOwner: true, linked via ownerId).
-  residents Resident[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  residents     Resident[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   @@index([name])
 }

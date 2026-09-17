@@ -10,13 +10,17 @@ interface OwnerTableProps {
   canDelete: boolean;
   onEdit: (owner: Owner) => void;
   onToggleActive: (owner: Owner) => void;
+  onUnlink: (owner: Owner) => void;
   onDelete: (owner: Owner) => void;
 }
 
-export function OwnerTable({ items, canUpdate, canDelete, onEdit, onToggleActive, onDelete }: OwnerTableProps) {
+export function OwnerTable({ items, canUpdate, canDelete, onEdit, onToggleActive, onUnlink, onDelete }: OwnerTableProps) {
   if (items.length === 0) {
     return <p className="text-muted">Nenhum registro encontrado.</p>;
   }
+
+  // Only meaningful once something is inactive — no point in an empty column on the active listing.
+  const showOperator = items.some((owner) => !owner.active);
 
   return (
     <div className="table-wrapper card">
@@ -27,6 +31,7 @@ export function OwnerTable({ items, canUpdate, canDelete, onEdit, onToggleActive
             <th>Apartamento(s)</th>
             <th>CPF</th>
             <th>Status</th>
+            {showOperator && <th>Operador</th>}
             <th>Telefone</th>
             <th>Veículo</th>
             {(canUpdate || canDelete) && <th aria-label="Ações" />}
@@ -43,6 +48,7 @@ export function OwnerTable({ items, canUpdate, canDelete, onEdit, onToggleActive
                   {owner.active ? "Ativo" : "Inativo"}
                 </span>
               </td>
+              {showOperator && <td>{owner.active ? "—" : (owner.deactivatedBy ?? "—")}</td>}
               <td>
                 {owner.phones.length === 0 ? (
                   "—"
@@ -64,6 +70,13 @@ export function OwnerTable({ items, canUpdate, canDelete, onEdit, onToggleActive
                     {canUpdate && (
                       <button type="button" className="btn btn-secondary" onClick={() => onEdit(owner)}>
                         Editar
+                      </button>
+                    )}
+                    {/* Releasing one apartment out of several is the common case (a sale), and
+                        deactivating would take all of them down at once. */}
+                    {canDelete && owner.active && owner.units.length > 0 && (
+                      <button type="button" className="btn btn-secondary" onClick={() => onUnlink(owner)}>
+                        Desvincular
                       </button>
                     )}
                     {canDelete && (

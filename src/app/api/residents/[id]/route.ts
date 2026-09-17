@@ -5,6 +5,7 @@ import { can } from "@/lib/permissions-db";
 import { residentUpdateSchema } from "@/lib/validations/resident";
 import { contactNestedWrites } from "@/lib/contact-writes";
 import { resolveResidentOwner } from "@/lib/resident-owner";
+import { requirePasswordConfirmation } from "@/lib/verify-password";
 
 const residentInclude = { phones: true, vehicles: true, owner: { select: { id: true, name: true } } } as const;
 
@@ -38,7 +39,14 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { phones, vehicles, ...rest } = parsed.data;
+  const { phones, vehicles, password, ...rest } = parsed.data;
+
+  const deactivating = parsed.data.active === false && current.active;
+  if (deactivating) {
+    const unauthorized = await requirePasswordConfirmation(session.user.id, password);
+    if (unauthorized) return unauthorized;
+  }
+
   let ownerFields: Record<string, unknown> = {};
 
   // Only re-resolve the owner link when something affecting it actually changed.
@@ -57,7 +65,14 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   const updated = await prisma.resident.update({
     where: { id },
-    data: { ...rest, ...ownerFields, ...contactNestedWrites({ phones, vehicles }, true) },
+    data: {
+      ...rest,
+      ...ownerFields,
+      // "Operador" in the inactive listing — who turned the record off, cleared on reactivation.
+      ...(deactivating ? { deactivatedBy: session.user.name ?? null } : {}),
+      ...(parsed.data.active === true ? { deactivatedBy: null } : {}),
+      ...contactNestedWrites({ phones, vehicles }, true),
+    },
     include: residentInclude,
   });
   return NextResponse.json(updated);

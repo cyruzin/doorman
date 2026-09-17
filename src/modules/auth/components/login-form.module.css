@@ -27,25 +27,3 @@
   padding: var(--space-3);
   margin-top: var(--space-2);
 }
-
-.passwordWrap {
-  position: relative;
-  display: flex;
-}
-
-/* Abre espaço para o botão não cobrir o fim da senha digitada. */
-.passwordInput {
-  padding-right: 3rem;
-}
-
-.passwordToggle {
-  position: absolute;
-  right: var(--space-2);
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--color-text-muted);
-}
-
-.passwordToggle:hover {
-  color: var(--color-text);
-}

@@ -7,6 +7,7 @@ import { maskCpf, maskPhone, unmask } from "@/lib/helpers/masks";
 import { useOccupiedUnits } from "@/modules/apartments/hooks/use-occupied-units";
 import { useClaimedUnits } from "../hooks/use-owners";
 import type { Owner, OwnerInput } from "../types";
+import { sortUnits } from "@/lib/building";
 import { OwnerUnitGrid } from "./owner-unit-grid";
 import styles from "./owner-form.module.css";
 
@@ -43,9 +44,13 @@ export function OwnerForm({ defaultValues, onSubmit, onCancel, submitLabel = "Sa
   const vehicleFields = useFieldArray({ control, name: "vehicles" });
 
   const units = useWatch({ control, name: "units" }) ?? [];
-  const sortedUnits = [...units].sort();
+  const sortedUnits = sortUnits(units);
   const { data: claimedUnits = {} } = useClaimedUnits(defaultValues?.id);
   const { data: occupiedUnits } = useOccupiedUnits();
+
+  // Only while the owner is active: an inactive record can be trimmed freely, which is how a
+  // conflicting apartment gets released before reactivating.
+  const lockedUnits = defaultValues?.active ? defaultValues.units : [];
 
   const toggleUnit = (unit: string) => {
     const next = units.includes(unit) ? units.filter((u) => u !== unit) : [...units, unit];
@@ -101,7 +106,16 @@ export function OwnerForm({ defaultValues, onSubmit, onCancel, submitLabel = "Sa
         <p className={sortedUnits.length > 0 ? styles.unitsSummary : "text-muted"}>
           {sortedUnits.length > 0 ? `Apartamentos: ${sortedUnits.join(", ")}` : "Nenhum apartamento selecionado."}
         </p>
-        <OwnerUnitGrid selectedUnits={units} onToggle={toggleUnit} claimedUnits={claimedUnits} occupiedUnits={occupiedUnits} />
+        <OwnerUnitGrid
+          selectedUnits={units}
+          onToggle={toggleUnit}
+          claimedUnits={claimedUnits}
+          occupiedUnits={occupiedUnits}
+          lockedUnits={lockedUnits}
+        />
+        {lockedUnits.length > 0 && (
+          <p className="text-muted">Para remover um apartamento deste proprietário, use o botão Desvincular.</p>
+        )}
         {errors.units?.message && <span className="field-error">{errors.units.message}</span>}
       </div>
 
