@@ -6,7 +6,10 @@ const BACKUPS_DIR = path.join(process.cwd(), "backups");
 
 function getDbPath(): string {
   const url = process.env.DATABASE_URL || "file:./dev.db";
-  return path.resolve(process.cwd(), url.replace(/^file:/, ""));
+  // DATABASE_URL vem de env var, o rastreador de arquivos do Turbopack não
+  // consegue analisar esse caminho estaticamente e sem o ignore trace o
+  // projeto inteiro para incluir no output.
+  return path.resolve(/* turbopackIgnore: true */ process.cwd(), url.replace(/^file:/, ""));
 }
 
 function getRetention(): number {

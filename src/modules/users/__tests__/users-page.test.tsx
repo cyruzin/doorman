@@ -58,7 +58,7 @@ describe("UsersPage", () => {
     await userEvent.click(screen.getByRole("button", { name: /novo usuário/i }));
     await userEvent.type(screen.getByLabelText(/^nome$/i), "Porteiro Dois");
     await userEvent.type(screen.getByLabelText(/^usuário$/i), "Porteiro Dois");
-    await userEvent.type(screen.getByLabelText(/senha/i), "senha123");
+    await userEvent.type(screen.getByLabelText(/^senha$/i), "senha123");
     await userEvent.click(screen.getByRole("button", { name: /^criar$/i }));
 
     await waitFor(() => {
@@ -73,7 +73,7 @@ describe("UsersPage", () => {
     await userEvent.click(screen.getByRole("button", { name: /novo usuário/i }));
     await userEvent.type(screen.getByLabelText(/^nome$/i), "Porteiro Dois");
     await userEvent.type(screen.getByLabelText(/^usuário$/i), "porteiro2");
-    await userEvent.type(screen.getByLabelText(/senha/i), "senha123");
+    await userEvent.type(screen.getByLabelText(/^senha$/i), "senha123");
     await userEvent.click(screen.getByRole("button", { name: /^criar$/i }));
 
     await waitFor(() => {

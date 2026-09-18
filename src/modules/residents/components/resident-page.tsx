@@ -9,7 +9,13 @@ import { useConfirm } from "@/components/confirm/confirm-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Pagination } from "@/components/pagination/pagination";
 import { freedUnitsWarning } from "@/modules/apartments/freed-units";
-import { useCreateResident, useDeleteResident, useResidents, useUpdateResident } from "../hooks/use-residents";
+import {
+  useCreateResident,
+  useDeleteResident,
+  usePromoteResidentToOwner,
+  useResidents,
+  useUpdateResident,
+} from "../hooks/use-residents";
 import type { Resident, ResidentStatusFilter, ResidentWriteInput } from "../types";
 import { ResidentForm } from "./resident-form";
 import { ResidentTable } from "./resident-table";
@@ -36,6 +42,7 @@ export function ResidentPage({ isCreating, onCreatingChange, initialSearch, onEd
   const canRead = can("residents", "read");
   const canUpdate = can("residents", "update");
   const canDelete = can("residents", "delete");
+  const canCreateOwner = can("owners", "create");
 
   const [search, setSearch] = useState(initialSearch ?? "");
   const [status, setStatus] = useState<ResidentStatusFilter>("active");
@@ -53,6 +60,7 @@ export function ResidentPage({ isCreating, onCreatingChange, initialSearch, onEd
   const createResident = useCreateResident();
   const updateResident = useUpdateResident();
   const deleteResident = useDeleteResident();
+  const promoteToOwner = usePromoteResidentToOwner();
 
   const [manualEditing, setManualEditing] = useState<Resident | null>(null);
   const editing = isCreating ? null : manualEditing;
@@ -165,6 +173,26 @@ export function ResidentPage({ isCreating, onCreatingChange, initialSearch, onEd
     );
   };
 
+  const handlePromoteToOwner = (data: { name: string; cpf?: string; email?: string }) => {
+    if (!editing) return;
+    requestConfirm(
+      async () => {
+        try {
+          await promoteToOwner.mutateAsync({ id: editing.id, data });
+          showToast(`${data.name} agora é proprietário do apartamento ${editing.unit}`, "success");
+          closeEditing();
+        } catch (err) {
+          showToast(extractApiErrorMessage(err, "Erro ao tornar proprietário"), "error");
+        }
+      },
+      {
+        title: "Tornar proprietário",
+        description: `Cadastrar ${data.name} como proprietário do apartamento ${editing.unit}? Nome, CPF e e-mail vão para o novo cadastro de proprietário exatamente como estão no formulário.`,
+        confirmLabel: "Confirmar",
+      },
+    );
+  };
+
   const handleDelete = (resident: Resident) => {
     requestConfirm(
       async () => {
@@ -193,7 +221,13 @@ export function ResidentPage({ isCreating, onCreatingChange, initialSearch, onEd
 
       {editing && (
         <div className={`card ${styles.formCard}`}>
-          <ResidentForm defaultValues={editing} onSubmit={handleUpdate} onCancel={closeEditing} submitLabel="Salvar" />
+          <ResidentForm
+            defaultValues={editing}
+            onSubmit={handleUpdate}
+            onCancel={closeEditing}
+            submitLabel="Salvar"
+            onPromoteToOwner={canCreateOwner ? handlePromoteToOwner : undefined}
+          />
         </div>
       )}
 

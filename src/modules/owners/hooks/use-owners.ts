@@ -9,7 +9,8 @@ import { ownersApi } from "../api";
 import type { OwnerListParams, OwnerUpdateInput, UnlinkUnitsInput } from "../types";
 import type { OwnerInput } from "../types";
 
-const queryKey = ["owners"];
+export const ownersQueryKey = ["owners"];
+const queryKey = ownersQueryKey;
 
 export function useOwners(params: OwnerListParams & { enabled?: boolean } = {}) {
   const { enabled = true, ...listParams } = params;

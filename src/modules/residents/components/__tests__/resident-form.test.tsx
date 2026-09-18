@@ -26,10 +26,19 @@ vi.mock("@/modules/apartments/hooks/use-occupied-units", () => ({
   useOccupiedUnits: () => ({ data: occupiedUnits }),
 }));
 
-function renderForm(onSubmit = vi.fn(), defaultValues?: Resident) {
+function renderForm(
+  onSubmit = vi.fn(),
+  defaultValues?: Resident,
+  onPromoteToOwner?: (data: { name: string; cpf?: string; email?: string }) => void,
+) {
   render(
     <ConfirmProvider>
-      <ResidentForm onSubmit={onSubmit} onCancel={vi.fn()} defaultValues={defaultValues} />
+      <ResidentForm
+        onSubmit={onSubmit}
+        onCancel={vi.fn()}
+        defaultValues={defaultValues}
+        onPromoteToOwner={onPromoteToOwner}
+      />
     </ConfirmProvider>,
   );
   return onSubmit;
@@ -91,6 +100,46 @@ describe("ResidentForm", () => {
     expect(await screen.findByText(/não há proprietário cadastrado/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /salvar/i })).toBeDisabled();
     expect(screen.queryByRole("checkbox", { name: "É proprietário" })).not.toBeInTheDocument();
+  });
+
+  it("offers to promote the active resident being edited when their unit has no owner", async () => {
+    occupancyData = { owner: null, residents: [] };
+    const onPromoteToOwner = vi.fn();
+    renderForm(
+      vi.fn(),
+      {
+        id: "r1",
+        name: "Ana",
+        cpf: "111.111.111-11",
+        email: "ana@example.com",
+        unit: "1306",
+        active: true,
+        deactivatedBy: null,
+        isOwner: false,
+        ownerId: null,
+        owner: null,
+        phones: [],
+        vehicles: [],
+        createdAt: "",
+        updatedAt: "",
+      },
+      onPromoteToOwner,
+    );
+
+    const promote = await screen.findByRole("button", { name: /tornar ana proprietário/i });
+    await userEvent.click(promote);
+
+    expect(onPromoteToOwner).toHaveBeenCalledWith({ name: "Ana", cpf: "11111111111", email: "ana@example.com" });
+  });
+
+  it("does not offer to promote a brand-new (not yet saved) resident", async () => {
+    occupancyData = { owner: null, residents: [] };
+    renderForm(vi.fn(), undefined, vi.fn());
+
+    await userEvent.click(unitButton("101"));
+
+    expect(await screen.findByText(/não há proprietário cadastrado/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /tornar .* proprietário/i })).not.toBeInTheDocument();
   });
 
   it("hides the É proprietário switch when the unit already has an owner-resident", async () => {

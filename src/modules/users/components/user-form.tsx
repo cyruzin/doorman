@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { userFormSchema, type AppUser, type UserFormValues } from "../types";
+import { PasswordInput } from "@/components/password-input/password-input";
 
 interface UserFormProps {
   defaultValues?: AppUser;
@@ -56,7 +57,7 @@ export function UserForm({ defaultValues, onSubmit, onCancel, submitLabel = "Sal
 
         <div className="form-field">
           <label htmlFor="password">{defaultValues ? "Nova senha (opcional)" : "Senha"}</label>
-          <input id="password" type="password" className="input" {...register("password")} />
+          <PasswordInput id="password" autoComplete="new-password" {...register("password")} />
           {errors.password && <span className="field-error">{errors.password.message}</span>}
         </div>
       </div>

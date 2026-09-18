@@ -1,5 +1,12 @@
 import { api } from "@/lib/axios";
-import type { Resident, ResidentListParams, ResidentListResult, ResidentUpdateInput, ResidentWriteInput } from "./types";
+import type {
+  PromoteResidentToOwnerInput,
+  Resident,
+  ResidentListParams,
+  ResidentListResult,
+  ResidentUpdateInput,
+  ResidentWriteInput,
+} from "./types";
 
 export const residentsApi = {
   list: async (params: ResidentListParams = {}): Promise<ResidentListResult> =>
@@ -10,5 +17,8 @@ export const residentsApi = {
     (await api.patch(`/residents/${id}`, data)).data,
   remove: async (id: string): Promise<void> => {
     await api.delete(`/residents/${id}`);
+  },
+  promoteToOwner: async (id: string, data: PromoteResidentToOwnerInput): Promise<void> => {
+    await api.post(`/residents/${id}/promote-to-owner`, data);
   },
 };

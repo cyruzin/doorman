@@ -30,3 +30,13 @@ export const residentUpdateSchema = residentBaseSchema.partial().extend({ passwo
 );
 
 export type ResidentInput = z.infer<typeof residentBaseSchema>;
+
+// Data for the new Owner record created when an existing resident is promoted
+// to owner of their own unit (see /api/residents/[id]/promote-to-owner).
+export const promoteResidentToOwnerSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  cpf: z.string().optional(),
+  email: z.email().optional().or(z.literal("")),
+});
+
+export type PromoteResidentToOwnerInput = z.infer<typeof promoteResidentToOwnerSchema>;

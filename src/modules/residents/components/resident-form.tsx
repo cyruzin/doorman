@@ -18,15 +18,24 @@ interface ResidentFormProps {
   onSubmit: (data: ResidentWriteInput) => Promise<void> | void;
   onCancel: () => void;
   submitLabel?: string;
+  /** Only offered when editing an active resident whose unit has no registered owner. */
+  onPromoteToOwner?: (data: { name: string; cpf?: string; email?: string }) => void;
 }
 
-export function ResidentForm({ defaultValues, onSubmit, onCancel, submitLabel = "Salvar" }: ResidentFormProps) {
+export function ResidentForm({
+  defaultValues,
+  onSubmit,
+  onCancel,
+  submitLabel = "Salvar",
+  onPromoteToOwner,
+}: ResidentFormProps) {
   const requestConfirm = useConfirm();
   const {
     register,
     control,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<ResidentInput>({
     resolver: zodResolver(residentSchema),
@@ -161,6 +170,22 @@ export function ResidentForm({ defaultValues, onSubmit, onCancel, submitLabel = 
             <span className="field-error">
               Não há proprietário cadastrado para o apartamento {unitValue}. Cadastre o proprietário antes de continuar.
             </span>
+          )}
+          {unitHasNoOwner && defaultValues?.active && onPromoteToOwner && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                const values = getValues();
+                onPromoteToOwner({
+                  name: values.name,
+                  cpf: values.cpf ? unmask(values.cpf) : values.cpf,
+                  email: values.email,
+                });
+              }}
+            >
+              Tornar {defaultValues.name} proprietário deste apartamento
+            </button>
           )}
         </div>
       </div>

@@ -43,6 +43,12 @@ export interface ResidentWriteInput {
 /** Deactivating asks for the logged-in user's password as a re-authentication. */
 export type ResidentUpdateInput = Partial<ResidentWriteInput> & { password?: string };
 
+export interface PromoteResidentToOwnerInput {
+  name: string;
+  cpf?: string;
+  email?: string;
+}
+
 export type ResidentStatusFilter = "active" | "inactive" | "all";
 
 export interface ResidentListParams {

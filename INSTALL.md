@@ -138,14 +138,54 @@ Pontos importantes para produção:
   pm2 startup   # configura para iniciar junto com o sistema
   ```
 
-### 3.1 Acessando de outra máquina pelo IP da rede (ex.: Raspberry Pi na portaria)
+### 3.1 Raspberry Pi: aumentando a swap antes de buildar
+
+Um Raspberry Pi com pouca RAM (ex.: 1GB) pode travar ou até derrubar a rede
+durante o `npm run build`, porque o processo de build consome mais memória do
+que a máquina tem disponível. No Raspberry Pi OS Lite (64 bits) o ideal é
+criar um arquivo de swap em disco de pelo menos 3GB antes de buildar:
+
+```bash
+# 1. Verificar a swap atual (zram, se houver, não é suficiente aqui)
+free -h
+swapon --show
+
+# 2. Conferir se há espaço em disco livre para os 3GB
+df -h /
+
+# 3. Criar o arquivo de swap de 3GB
+sudo fallocate -l 3G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+
+# 4. Confirmar que a swap está ativa
+swapon --show
+free -h
+```
+
+Para a swap sobreviver a um reboot, adicione a linha abaixo ao final do
+`/etc/fstab`:
+
+```
+/swapfile none swap sw 0 0
+```
+
+Com a swap criada, use o script `build:pi` (em vez de `npm run build`), que
+já limita o heap do Node para não estourar a RAM física durante o build:
+
+```bash
+npm run build:pi
+```
+
+### 3.2 Acessando de outra máquina pelo IP da rede (ex.: Raspberry Pi na portaria)
 
 Se o servidor roda numa máquina (Raspberry Pi, mini PC, etc.) e é acessado de
-outros computadores pelo IP dela na rede local (ex.: `http://192.168.0.236:3000`)
+outros computadores pelo IP dela na rede local (ex.: `http://192.168.0.136:3000`)
 em vez de `localhost`, é preciso adicionar mais uma variável ao `.env`:
 
 ```bash
-AUTH_URL="http://192.168.0.236:3000"
+AUTH_URL="http://192.168.0.136:3000"
 ```
 
 Sem isso, o `next start` monta a URL de redirecionamento do logout como

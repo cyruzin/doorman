@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:pi": "NODE_OPTIONS=--max-old-space-size=768 next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",

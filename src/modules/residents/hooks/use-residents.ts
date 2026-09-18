@@ -4,8 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { dashboardSummaryQueryKey } from "@/modules/home/hooks/use-dashboard-summary";
 import { occupiedUnitsQueryKey } from "@/modules/apartments/hooks/use-occupied-units";
 import { unitOccupancyQueryKey } from "@/modules/apartments/hooks/use-unit-occupancy";
+import { ownersQueryKey } from "@/modules/owners/hooks/use-owners";
 import { residentsApi } from "../api";
-import type { ResidentListParams, ResidentUpdateInput, ResidentWriteInput } from "../types";
+import type { PromoteResidentToOwnerInput, ResidentListParams, ResidentUpdateInput, ResidentWriteInput } from "../types";
 
 export const residentsQueryKey = ["residents"];
 
@@ -43,5 +44,16 @@ export function useDeleteResident() {
   return useMutation({
     mutationFn: (id: string) => residentsApi.remove(id),
     onSuccess: () => invalidateResidentEffects(queryClient),
+  });
+}
+
+export function usePromoteResidentToOwner() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: PromoteResidentToOwnerInput }) => residentsApi.promoteToOwner(id, data),
+    onSuccess: () => {
+      invalidateResidentEffects(queryClient);
+      queryClient.invalidateQueries({ queryKey: ownersQueryKey });
+    },
   });
 }
