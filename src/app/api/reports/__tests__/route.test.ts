@@ -111,10 +111,18 @@ describe("GET /api/reports", () => {
     );
   });
 
-  it("queries the mezanino entry table and normalizes rows for a mezanino room", async () => {
+  it("queries the mezanino entry table and normalizes rows, including the operator, for a mezanino room", async () => {
     requirePermission.mockResolvedValue({ session: {}, error: null });
     mezaninoFindMany.mockResolvedValue([
-      { id: "m1", room: "GAME_ROOM", unit: "101", residentName: "Resident Person", entryAt: new Date("2026-08-10"), exitAt: null },
+      {
+        id: "m1",
+        room: "GAME_ROOM",
+        unit: "101",
+        residentName: "Resident Person",
+        entryAt: new Date("2026-08-10"),
+        exitAt: new Date("2026-08-10T12:00:00.000Z"),
+        exitConfirmedByUsername: "jonas",
+      },
     ]);
     mezaninoCount.mockResolvedValue(1);
 
@@ -128,7 +136,7 @@ describe("GET /api/reports", () => {
     );
     expect(body).toMatchObject({
       total: 1,
-      items: [{ id: "m1", unit: "101", requesterName: "Resident Person", finishedAt: null }],
+      items: [{ id: "m1", unit: "101", requesterName: "Resident Person", finishedByUsername: "jonas" }],
     });
   });
 

@@ -5,7 +5,7 @@ import { requirePermission } from "@/lib/api-guard";
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function PATCH(_req: NextRequest, { params }: RouteParams) {
-  const { error } = await requirePermission("mezanino", "update");
+  const { session, error } = await requirePermission("mezanino", "update");
   if (error) return error;
 
   const { id } = await params;
@@ -13,7 +13,10 @@ export async function PATCH(_req: NextRequest, { params }: RouteParams) {
   if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (entry.exitAt) return NextResponse.json({ error: "Saída já registrada" }, { status: 400 });
 
-  const updated = await prisma.mezaninoEntry.update({ where: { id }, data: { exitAt: new Date() } });
+  const updated = await prisma.mezaninoEntry.update({
+    where: { id },
+    data: { exitAt: new Date(), exitConfirmedByUsername: session.user.name },
+  });
   return NextResponse.json(updated);
 }
 

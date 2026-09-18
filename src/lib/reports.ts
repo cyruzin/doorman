@@ -156,6 +156,7 @@ export function mezaninoEntryToReportRow(entry: {
   residentName: string;
   entryAt: Date;
   exitAt: Date | null;
+  exitConfirmedByUsername: string | null;
 }): ReportRow {
   return {
     id: entry.id,
@@ -164,7 +165,7 @@ export function mezaninoEntryToReportRow(entry: {
     requesterName: entry.residentName,
     eventAt: entry.entryAt,
     finishedAt: entry.exitAt,
-    finishedByUsername: null,
+    finishedByUsername: entry.exitConfirmedByUsername,
     cancelledAt: null,
     cancelledByUsername: null,
   };

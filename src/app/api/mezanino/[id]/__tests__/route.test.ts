@@ -58,14 +58,17 @@ describe("PATCH /api/mezanino/[id]", () => {
     expect(update).not.toHaveBeenCalled();
   });
 
-  it("sets exitAt when the entry is still pending", async () => {
-    requirePermission.mockResolvedValue({ session: {}, error: null });
+  it("sets exitAt and the confirming user when the entry is still pending", async () => {
+    requirePermission.mockResolvedValue({ session: { user: { name: "jonas" } }, error: null });
     findUnique.mockResolvedValue({ id: "e1", exitAt: null });
     update.mockResolvedValue({ id: "e1", exitAt: new Date().toISOString() });
 
     const res = await PATCH(new NextRequest("http://localhost/api/mezanino/e1", { method: "PATCH" }), params("e1"));
     expect(res.status).toBe(200);
-    expect(update).toHaveBeenCalledWith({ where: { id: "e1" }, data: { exitAt: expect.any(Date) } });
+    expect(update).toHaveBeenCalledWith({
+      where: { id: "e1" },
+      data: { exitAt: expect.any(Date), exitConfirmedByUsername: "jonas" },
+    });
   });
 });
 

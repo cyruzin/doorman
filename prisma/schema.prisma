@@ -136,12 +136,13 @@ model Phone {
 // when they returned the key. residentName is a snapshot at entry time, so
 // history stays readable even if the resident record later changes.
 model MezaninoEntry {
-  id           String       @id @default(cuid())
-  room         MezaninoRoom
-  unit         String
-  residentName String
-  entryAt      DateTime     @default(now())
-  exitAt       DateTime?
+  id                      String       @id @default(cuid())
+  room                    MezaninoRoom
+  unit                    String
+  residentName            String
+  entryAt                 DateTime     @default(now())
+  exitAt                  DateTime?
+  exitConfirmedByUsername String?
 
   @@index([room, entryAt])
   @@index([room, exitAt])
