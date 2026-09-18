@@ -8,12 +8,18 @@ vi.mock("@/lib/api-guard", () => ({
 
 const findMany = vi.fn();
 const count = vi.fn();
+const mezaninoFindMany = vi.fn();
+const mezaninoCount = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     schedulingEntry: {
       findMany: (...args: unknown[]) => findMany(...args),
       count: (...args: unknown[]) => count(...args),
+    },
+    mezaninoEntry: {
+      findMany: (...args: unknown[]) => mezaninoFindMany(...args),
+      count: (...args: unknown[]) => mezaninoCount(...args),
     },
   },
 }));
@@ -25,6 +31,8 @@ describe("GET /api/reports", () => {
     requirePermission.mockReset();
     findMany.mockReset();
     count.mockReset();
+    mezaninoFindMany.mockReset();
+    mezaninoCount.mockReset();
   });
 
   it("rejects an unauthorized request", async () => {
@@ -100,6 +108,39 @@ describe("GET /api/reports", () => {
           OR: [{ finishedAt: { not: null } }, { cancelledAt: { not: null } }],
         }),
       }),
+    );
+  });
+
+  it("queries the mezanino entry table and normalizes rows for a mezanino room", async () => {
+    requirePermission.mockResolvedValue({ session: {}, error: null });
+    mezaninoFindMany.mockResolvedValue([
+      { id: "m1", room: "GAME_ROOM", unit: "101", residentName: "Resident Person", entryAt: new Date("2026-08-10"), exitAt: null },
+    ]);
+    mezaninoCount.mockResolvedValue(1);
+
+    const res = await GET(new NextRequest("http://localhost/api/reports?room=GAME_ROOM&all=true"));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(findMany).not.toHaveBeenCalled();
+    expect(mezaninoFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ room: "GAME_ROOM" }) }),
+    );
+    expect(body).toMatchObject({
+      total: 1,
+      items: [{ id: "m1", unit: "101", requesterName: "Resident Person", finishedAt: null }],
+    });
+  });
+
+  it("maps the cancelled checkbox to pending (no exit yet) for mezanino rooms", async () => {
+    requirePermission.mockResolvedValue({ session: {}, error: null });
+    mezaninoFindMany.mockResolvedValue([]);
+    mezaninoCount.mockResolvedValue(0);
+
+    await GET(new NextRequest("http://localhost/api/reports?room=GYM&cancelled=true"));
+
+    expect(mezaninoFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ room: "GYM", exitAt: null }) }),
     );
   });
 

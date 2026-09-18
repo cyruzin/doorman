@@ -2,7 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/api-guard";
 import { parsePagination, type PaginatedResult } from "@/lib/pagination";
-import { REPORT_ROOMS, buildReportWhere, parseDateRange, parseStatusFilter, type ReportRoom } from "@/lib/reports";
+import {
+  REPORT_ROOMS,
+  buildMezaninoReportWhere,
+  buildReportWhere,
+  isMezaninoReportRoom,
+  mezaninoEntryToReportRow,
+  parseDateRange,
+  parseStatusFilter,
+  type ReportRoom,
+} from "@/lib/reports";
 
 export async function GET(req: NextRequest) {
   const { error } = await requirePermission("reports", "read");
@@ -22,6 +31,17 @@ export async function GET(req: NextRequest) {
   }
 
   const { q, page, pageSize, skip } = parsePagination(req);
+
+  if (isMezaninoReportRoom(room)) {
+    const where = buildMezaninoReportWhere({ room, statusFilter, range, q });
+    const [rows, total] = await Promise.all([
+      prisma.mezaninoEntry.findMany({ where, orderBy: { entryAt: "desc" }, skip, take: pageSize }),
+      prisma.mezaninoEntry.count({ where }),
+    ]);
+    const items = rows.map(mezaninoEntryToReportRow);
+    return NextResponse.json({ items, total, page, pageSize } satisfies PaginatedResult<(typeof items)[number]>);
+  }
+
   const where = buildReportWhere({ room, statusFilter, range, q });
 
   const [items, total] = await Promise.all([

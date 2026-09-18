@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { usePermissions } from "@/modules/permissions/hooks/use-permissions";
 import { CinemaIcon, GrillIcon, PartyHallIcon } from "@/modules/scheduling/components/room-icons";
+import { GameRoomIcon, GymIcon, KidsIcon } from "@/modules/mezanino/components/room-icons";
 import { REPORT_ROOMS, ROOM_LABELS, type ReportRoom } from "../types";
 import { ReportsRoomPanel } from "./reports-room-panel";
 import styles from "./reports-page.module.css";
@@ -11,6 +12,9 @@ const ROOM_ICONS: Record<ReportRoom, typeof PartyHallIcon> = {
   PARTY_HALL: PartyHallIcon,
   CINEMA: CinemaIcon,
   GRILL: GrillIcon,
+  GAME_ROOM: GameRoomIcon,
+  GYM: GymIcon,
+  KIDS_SPACE: KidsIcon,
 };
 
 export function ReportsPage() {

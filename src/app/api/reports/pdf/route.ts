@@ -2,7 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/api-guard";
 import { parsePagination } from "@/lib/pagination";
-import { REPORT_ROOMS, buildReportWhere, parseDateRange, parseStatusFilter, type ReportRoom } from "@/lib/reports";
+import {
+  REPORT_ROOMS,
+  buildMezaninoReportWhere,
+  buildReportWhere,
+  isMezaninoReportRoom,
+  mezaninoEntryToReportRow,
+  parseDateRange,
+  parseStatusFilter,
+  type ReportRoom,
+} from "@/lib/reports";
 import { buildSchedulingReportPdf } from "@/lib/pdf/scheduling-report";
 
 export async function GET(req: NextRequest) {
@@ -26,8 +35,18 @@ export async function GET(req: NextRequest) {
   }
 
   const { q } = parsePagination(req);
-  const where = buildReportWhere({ room, statusFilter, range, q });
-  const entries = await prisma.schedulingEntry.findMany({ where, orderBy: { eventAt: "desc" } });
+
+  const entries = isMezaninoReportRoom(room)
+    ? (
+        await prisma.mezaninoEntry.findMany({
+          where: buildMezaninoReportWhere({ room, statusFilter, range, q }),
+          orderBy: { entryAt: "desc" },
+        })
+      ).map(mezaninoEntryToReportRow)
+    : await prisma.schedulingEntry.findMany({
+        where: buildReportWhere({ room, statusFilter, range, q }),
+        orderBy: { eventAt: "desc" },
+      });
 
   const pdfBytes = await buildSchedulingReportPdf({
     room,

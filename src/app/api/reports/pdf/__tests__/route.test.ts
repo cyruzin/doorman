@@ -7,10 +7,14 @@ vi.mock("@/lib/api-guard", () => ({
 }));
 
 const findMany = vi.fn();
+const mezaninoFindMany = vi.fn();
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     schedulingEntry: {
       findMany: (...args: unknown[]) => findMany(...args),
+    },
+    mezaninoEntry: {
+      findMany: (...args: unknown[]) => mezaninoFindMany(...args),
     },
   },
 }));
@@ -26,6 +30,7 @@ describe("GET /api/reports/pdf", () => {
   beforeEach(() => {
     requirePermission.mockReset();
     findMany.mockReset();
+    mezaninoFindMany.mockReset();
     buildSchedulingReportPdf.mockReset();
   });
 
@@ -101,6 +106,27 @@ describe("GET /api/reports/pdf", () => {
         statusFilter: { all: false, finished: false, cancelled: false },
         entries: [{ id: "e1" }],
         generatedBy: "jonas",
+      }),
+    );
+  });
+
+  it("builds the PDF from normalized mezanino rows for a mezanino room", async () => {
+    requirePermission.mockResolvedValue({ session: { user: { name: "jonas" } }, error: null });
+    mezaninoFindMany.mockResolvedValue([
+      { id: "m1", room: "GYM", unit: "101", residentName: "Resident Person", entryAt: new Date("2026-08-05"), exitAt: null },
+    ]);
+    buildSchedulingReportPdf.mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46]));
+
+    const res = await GET(
+      new NextRequest("http://localhost/api/reports/pdf?room=GYM&startDate=2026-08-01&endDate=2026-08-10"),
+    );
+
+    expect(res.status).toBe(200);
+    expect(findMany).not.toHaveBeenCalled();
+    expect(buildSchedulingReportPdf).toHaveBeenCalledWith(
+      expect.objectContaining({
+        room: "GYM",
+        entries: [expect.objectContaining({ id: "m1", unit: "101", requesterName: "Resident Person", finishedAt: null })],
       }),
     );
   });

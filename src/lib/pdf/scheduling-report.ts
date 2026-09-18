@@ -54,7 +54,9 @@ function formatDateTime(date: Date): string {
 }
 
 function statusLabel(entry: ReportEntryRow): string {
-  return entry.cancelledAt ? "Cancelado" : "Utilizado";
+  if (entry.cancelledAt) return "Cancelado";
+  if (entry.finishedAt) return "Utilizado";
+  return "Pendente";
 }
 
 function operatorName(entry: ReportEntryRow): string {
@@ -109,7 +111,7 @@ export async function buildSchedulingReportPdf({
   };
 
   const drawPageHeader = () => {
-    page.drawText(`Relatório de agendamentos: ${REPORT_ROOM_LABELS[room]}`, {
+    page.drawText(`Relatório: ${REPORT_ROOM_LABELS[room]}`, {
       x: MARGIN,
       y,
       size: 16,

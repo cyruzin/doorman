@@ -8,7 +8,7 @@ import { useToast } from "@/components/toast/toast-provider";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Pagination } from "@/components/pagination/pagination";
 import { useGenerateReportPdf, useReportEntries } from "../hooks/use-reports";
-import { ROOM_LABELS, type ReportEntry, type ReportRoom, type ReportStatusFilter } from "../types";
+import { ROOM_LABELS, isMezaninoReportRoom, type ReportEntry, type ReportRoom, type ReportStatusFilter } from "../types";
 import styles from "./reports-room-panel.module.css";
 
 const PAGE_SIZE = 20;
@@ -17,13 +17,23 @@ interface ReportsRoomPanelProps {
   room: ReportRoom;
 }
 
+// Mezanino spaces have no cancellation, only returned vs. still checked out —
+// same two checkboxes, reused with room-appropriate wording.
+function statusOptionLabels(room: ReportRoom): { finished: string; cancelled: string } {
+  return isMezaninoReportRoom(room)
+    ? { finished: "Concluído", cancelled: "Pendente" }
+    : { finished: "Utilizado", cancelled: "Cancelado" };
+}
+
 function formatDateTime(iso: string): string {
   const date = new Date(iso);
   return `${date.toLocaleDateString("pt-BR")} ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
 function entryStatusLabel(entry: ReportEntry): string {
-  return entry.cancelledAt ? "Cancelado" : "Utilizado";
+  if (entry.cancelledAt) return "Cancelado";
+  if (entry.finishedAt) return "Utilizado";
+  return "Pendente";
 }
 
 function operatorName(entry: ReportEntry): string {
@@ -86,6 +96,7 @@ export function ReportsRoomPanel({ room }: ReportsRoomPanelProps) {
 
   const entries = data?.items ?? [];
   const canGenerate = canGeneratePdf && !!startDate && !!endDate && (data?.total ?? 0) > 0;
+  const statusLabels = statusOptionLabels(room);
 
   const toggleStatus = (key: keyof ReportStatusFilter) => {
     setStatusFilter((current) => ({ ...current, [key]: !current[key] }));
@@ -193,7 +204,7 @@ export function ReportsRoomPanel({ room }: ReportsRoomPanelProps) {
               <span className={styles.toggleTrack}>
                 <span className={styles.toggleThumb} />
               </span>
-              <span className={styles.toggleLabel}>Utilizado</span>
+              <span className={styles.toggleLabel}>{statusLabels.finished}</span>
             </label>
             <label className={styles.toggle}>
               <input
@@ -205,7 +216,7 @@ export function ReportsRoomPanel({ room }: ReportsRoomPanelProps) {
               <span className={styles.toggleTrack}>
                 <span className={styles.toggleThumb} />
               </span>
-              <span className={styles.toggleLabel}>Cancelado</span>
+              <span className={styles.toggleLabel}>{statusLabels.cancelled}</span>
             </label>
           </div>
         </div>
